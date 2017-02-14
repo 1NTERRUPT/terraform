@@ -1,19 +1,23 @@
+variable "region" { default = "us-east-1" }
+variable "main_cidr" { default = "10.0.0.0/16" }
+variable "cfg_bucket" { default = "1nterrupt-util" }
+variable "master_key" {}
+
 provider "aws" {
-    region     = "us-east-1"
+    region = "${var.region}"
 }
 
 data "terraform_remote_state" "utilitel_network" {
     backend = "s3"
     config {
-        bucket = "1nterrupt-util"
+        bucket = "${var.cfg_bucket}"
         key = "utilitel/network.tfstate"
-        region = "us-east-1"
+        region = "${var.region}"
     }
 }
 
 resource "aws_vpc" "main" {
-    cidr_block = "10.0.0.0/16"
-    enable_dns_hostnames = true
+    cidr_block = "${var.main_cidr}"
     tags {
         Name = "utilitel_vpc"
     }
@@ -25,7 +29,7 @@ resource "aws_internet_gateway" "gw" {
 
 resource "aws_subnet" "corp" {
     vpc_id = "${aws_vpc.main.id}"
-    cidr_block = "10.0.1.0/24"
+    cidr_block = "${cidrsubnet(var.main_cidr, 8 ,1)}"
     map_public_ip_on_launch = true
     depends_on = ["aws_internet_gateway.gw"]
     tags {
@@ -35,7 +39,7 @@ resource "aws_subnet" "corp" {
 
 resource "aws_subnet" "hmi" {
     vpc_id = "${aws_vpc.main.id}"
-    cidr_block = "10.0.2.0/24"
+    cidr_block = "${cidrsubnet(var.main_cidr, 8 ,2)}"
     tags {
         Name = "utilitel_hmi"
     }
@@ -93,6 +97,17 @@ resource "aws_instance" "tools" {
     subnet_id = "${aws_subnet.corp.id}"
     security_groups = ["${aws_security_group.public_ssh.id}"]
     key_name = "utilitel-tools"
+
+    provisioner "remote-exec" {
+        script = "scripts/bootstrap_ansible.sh"
+
+        connection {
+            user = "ubuntu"
+            private_key = "${file(var.master_key)}"
+            agent = false
+        }
+    }
+
     tags {
         Name = "tools"
     }
