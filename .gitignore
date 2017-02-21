@@ -1,3 +1,5 @@
 .terraform
 todo.md
 terraform.tfvars
+terraform.tfstate
+terraform.tfstate.backup

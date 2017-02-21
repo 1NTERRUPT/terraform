@@ -71,6 +71,55 @@ data "aws_ami" "ubuntu" {
     owners = ["099720109477"] # Canonical
 }
 
+resource "aws_iam_role" "backstage_iam_role" {
+    name = "backstage_iam_role"
+    assume_role_policy = <<EOF
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Action": "sts:AssumeRole",
+            "Principal": {
+                "Service": "ec2.amazonaws.com"
+            },
+            "Effect": "Allow",
+            "Sid": ""
+        }
+    ]
+}
+EOF
+}
+
+resource "aws_iam_instance_profile" "backstage_instance_profile" {
+    name = "backstage_instance_profile"
+    roles = ["backstage_iam_role"]
+}
+
+resource "aws_iam_role_policy" "backstage_iam_role_policy" {
+    name = "backstage_iam_role_policy"
+    role = "${aws_iam_role.backstage_iam_role.id}"
+    policy = <<EOF
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": ["s3:ListBucket"],
+            "Resource": ["arn:aws:s3:::1nterrupt-util"]
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "s3:PutObject",
+                "s3:GetObject"
+            ],
+            "Resource": ["arn:aws:s3:::1nterrupt-util/*"]
+        }
+    ]
+}
+EOF
+}
+
 resource "aws_security_group" "public_ssh" {
     name = "allow_ssh"
     description = "Allow all inbound ssh traffic"
@@ -91,12 +140,36 @@ resource "aws_security_group" "public_ssh" {
     }
 }
 
-resource "aws_instance" "tools" {
+resource "aws_security_group" "all_corp" {
+    name = "all_corp"
+    description = "Allow all inbound ssh traffic"
+    vpc_id = "${aws_vpc.main.id}"
+
+    ingress {
+        from_port = 0
+        to_port = 0
+        protocol = "tcp"
+        cidr_blocks = ["${aws_subnet.corp.cidr_block}"]
+    }
+
+    egress {
+        from_port = 0
+        to_port = 0
+        protocol = "-1"
+        cidr_blocks = ["0.0.0.0/0"]
+    }
+}
+
+
+
+resource "aws_instance" "backstage" {
     ami = "${data.aws_ami.ubuntu.id}"
     instance_type = "t2.micro"
     subnet_id = "${aws_subnet.corp.id}"
-    security_groups = ["${aws_security_group.public_ssh.id}"]
     key_name = "utilitel-tools"
+    security_groups = ["${aws_security_group.public_ssh.id}"]
+
+    iam_instance_profile = "${aws_iam_instance_profile.backstage_instance_profile.id}"
 
     provisioner "remote-exec" {
         script = "scripts/bootstrap_ansible.sh"
@@ -109,7 +182,19 @@ resource "aws_instance" "tools" {
     }
 
     tags {
-        Name = "tools"
+        Name = "backstage"
     }
 }
-    
+
+resource "aws_instance" "fileserver" {
+    ami = "${data.aws_ami.ubuntu.id}"
+    instance_type = "t2.micro"
+    subnet_id = "${aws_subnet.corp.id}"
+    key_name = "utilitel-tools"
+    security_groups = ["${aws_security_group.all_corp.id}"]
+
+    tags {
+        Name = "fileserver"
+    }
+}
+
