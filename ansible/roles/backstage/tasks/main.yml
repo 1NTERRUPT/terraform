@@ -1,4 +1,7 @@
 ---
+- name: Load aws secrets
+  include_vars: aws.yml
+
 - name: Setup aws credentials
   template: src=credentials.j2 dest=/home/ubuntu/.aws/credentials
   become: yes
