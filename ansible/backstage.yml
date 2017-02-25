@@ -1,0 +1,9 @@
+---
+- include_vars: aws.yml
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  roles: 
+    - backstage
+
+
