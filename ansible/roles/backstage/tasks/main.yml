@@ -2,6 +2,12 @@
 - name: Load aws secrets
   include_vars: aws.yml
 
+- name: Create aws credentials folder
+  file: path=/home/ubuntu/.aws state=directory owner=ubuntu group=ubuntu 
+
+- name: Create scenario folder
+  file: path=/tmp/scenario_support state=directory owner=ubuntu group=ubuntu 
+
 - name: Setup aws credentials
   template: src=credentials.j2 dest=/home/ubuntu/.aws/credentials
   become: yes
