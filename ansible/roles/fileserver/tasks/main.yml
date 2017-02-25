@@ -1,0 +1,6 @@
+---
+- name: Set the hostname
+  hostname:
+    name: fileserver
+  become: yes
+

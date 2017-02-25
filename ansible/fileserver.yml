@@ -1,5 +1,5 @@
 ---
-- hosts: tag_name_fileserver
+- hosts: tag_Name_fileserver
   become: true
 
   vars:
@@ -17,10 +17,12 @@
     samba_map_to_guest: Never
 
     samba_shares_root: /srv/samba
+    samba_shares:
       - name: public
         comment: "fileshare"
         guest_ok: yes
         read_only: yes
     
   roles: 
+    - fileserver
     - samba
