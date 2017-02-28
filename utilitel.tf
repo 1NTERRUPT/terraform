@@ -199,3 +199,7 @@ resource "aws_instance" "fileserver" {
     }
 }
 
+output "backstage ip" {
+  value = "${aws_instance.backstage.public_ip}"
+}
+

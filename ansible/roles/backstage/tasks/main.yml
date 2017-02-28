@@ -24,3 +24,9 @@
 
 - name: Download scenario support files
   command: "aws s3 cp --recursive s3://1nterrupt-scenario-support /tmp/scenario_support/"
+
+- name: Samba client
+  apt:
+    name: samba-client
+    state: present
+  become: true
