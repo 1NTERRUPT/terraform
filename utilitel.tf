@@ -16,6 +16,16 @@ data "terraform_remote_state" "utilitel_network" {
     }
 }
 
+# Render a part using a `template_file`
+data "template_file" "backstage_script" {
+  template = "${file("${path.module}/modules/backstage_init.tpl")}"
+}
+
+# Render a part using a `template_file`
+data "template_file" "script" {
+  template = "${file("${path.module}/modules/init.tpl")}"
+}
+
 resource "aws_vpc" "main" {
     cidr_block = "${var.main_cidr}"
     enable_dns_hostnames = true
@@ -185,26 +195,14 @@ resource "aws_security_group" "all_corp" {
     }
 }
 
-
-
 resource "aws_instance" "backstage" {
     ami = "${data.aws_ami.ubuntu.id}"
     instance_type = "t2.micro"
     subnet_id = "${aws_subnet.corp.id}"
     key_name = "utilitel-tools"
     security_groups = ["${aws_security_group.public_ssh.id}"]
-
+    user_data = "${data.template_file.backstage_script.rendered}"
     iam_instance_profile = "${aws_iam_instance_profile.backstage_instance_profile.id}"
-
-    provisioner "remote-exec" {
-        script = "scripts/bootstrap_ansible.sh"
-
-        connection {
-            user = "ubuntu"
-            private_key = "${file(var.master_key)}"
-            agent = false
-        }
-    }
 
     tags {
         Name = "backstage"
@@ -217,6 +215,7 @@ resource "aws_instance" "fileserver" {
     subnet_id = "${aws_subnet.corp.id}"
     key_name = "utilitel-tools"
     security_groups = ["${aws_security_group.all_corp.id}"]
+    user_data = "${data.template_file.script.rendered}"
 
     tags {
         Name = "fileserver"
@@ -225,5 +224,9 @@ resource "aws_instance" "fileserver" {
 
 output "backstage ip" {
   value = "${aws_instance.backstage.public_ip}"
+}
+
+output "fileserver ip" {
+  value = "${aws_instance.fileserver.private_ip}"
 }
 
