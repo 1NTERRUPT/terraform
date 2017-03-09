@@ -1,7 +1,4 @@
 ---
-- name: Load aws secrets
-  include_vars: aws.yml
-
 - name: Set the host
   hostname:
     name: backstage
@@ -12,15 +9,8 @@
     name: boto
     version: 2.38.0
 
-- name: Create aws credentials folder
-  file: path=/home/ubuntu/.aws state=directory owner=ubuntu group=ubuntu 
-
 - name: Create scenario folder
   file: path=/tmp/scenario_support/fileserver state=directory owner=ubuntu group=ubuntu 
-
-- name: Setup aws credentials
-  template: src=credentials.j2 dest=/home/ubuntu/.aws/credentials
-  become: yes
 
 - name: Download scenario support files
   command: "aws s3 cp --recursive s3://1nterrupt-scenario-support /tmp/scenario_support/"
