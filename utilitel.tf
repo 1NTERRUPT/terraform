@@ -128,6 +128,17 @@ resource "aws_iam_role_policy" "backstage_iam_role_policy" {
           "s3:GetObject"
         ],
         "Resource": ["arn:aws:s3:::1nterrupt-scenario-support/*"]
+      },
+      {
+        "Effect": "Allow",
+        "Action": [
+          "rds:Describe*",
+          "ec2:Describe*",
+          "elasticache:*",
+          "route53:ListHostedZones",
+          "route53:ListResourceRecordSets"
+        ],
+        "Resource": "*"
       }
     ]
 }
