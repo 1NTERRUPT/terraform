@@ -1,0 +1,37 @@
+---
+- name: Set the hostname
+  hostname:
+    name: wikiserver
+  become: yes
+
+- copy:
+    src: /tmp/scenario_support/wikiserver/
+    dest: /srv/wikiserver/
+    owner: ubuntu
+    group: ubuntu
+
+- name: Install Packages
+  apt: name={{ item }} update_cache=yes state=latest
+  with_items:
+    - build-essential
+    - npm
+    - nodejs-legacy
+    - git
+    - mcrypt
+    - nginx
+    - curl
+
+- name: Install pm2
+  npm: name=pm2 global=yes production=yes
+
+- name: Install Hazel wiki
+  npm:
+    path: /srv/wikiserver
+    state: latest
+  register: npm_finished
+
+- name: Start APP
+  sudo_user: ubuntu
+  command: pm2 start index.js --name app chdir=/srv/wikiserver/
+  ignore_errors: yes
+  when: npm_finished.changed

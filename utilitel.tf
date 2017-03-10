@@ -222,11 +222,20 @@ resource "aws_instance" "fileserver" {
     }
 }
 
-output "backstage ip" {
-  value = "${aws_instance.backstage.public_ip}"
+resource "aws_instance" "wikiserver" {
+    ami = "${data.aws_ami.ubuntu.id}"
+    instance_type = "t2.micro"
+    subnet_id = "${aws_subnet.corp.id}"
+    key_name = "utilitel-tools"
+    security_groups = ["${aws_security_group.all_corp.id}"]
+    user_data = "${data.template_file.script.rendered}"
+
+    tags {
+        Name = "wikiserver"
+    }
 }
 
-output "fileserver ip" {
-  value = "${aws_instance.fileserver.private_ip}"
+output "backstage ip" {
+  value = "${aws_instance.backstage.public_ip}"
 }
 
