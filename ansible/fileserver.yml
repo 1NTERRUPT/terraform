@@ -20,6 +20,7 @@
     samba_shares:
       - name: public
         comment: "fileshare"
+        public: yes
         guest_ok: yes
         read_only: yes
     

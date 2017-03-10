@@ -4,3 +4,7 @@
     name: fileserver
   become: yes
 
+- copy:
+    src: /tmp/scenario_support/fileserver/
+    dest: /srv/samba/public/
+
