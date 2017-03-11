@@ -1,0 +1,16 @@
+---
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  roles: 
+    - backstage
+
+- hosts: tag_Name_fileserver
+  become: true
+  roles: 
+    - fileserver
+
+- hosts: tag_Name_wikiserver
+  become: true
+  roles:
+    - wikiserver

@@ -27,11 +27,20 @@
 - name: Install Hazel wiki
   npm:
     path: /srv/wikiserver
-    state: latest
   register: npm_finished
+
+
+- name: Stop APP
+  sudo_user: ubuntu
+  command: pm2 stop server.js --name app
+  args:
+    chdir: /srv/wikiserver/
+  ignore_errors: yes
+  when: npm_finished.changed
+  register: app_stopped
 
 - name: Start APP
   sudo_user: ubuntu
-  command: pm2 start index.js --name app chdir=/srv/wikiserver/
+  command: pm2 start server.js --name app chdir=/srv/wikiserver/
   ignore_errors: yes
-  when: npm_finished.changed
+  when: app_stopped.changed

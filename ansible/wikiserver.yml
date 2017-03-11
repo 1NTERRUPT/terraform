@@ -1,6 +1,0 @@
----
-- hosts: tag_Name_wikiserver
-  become: true
-
-  roles:
-    - wikiserver

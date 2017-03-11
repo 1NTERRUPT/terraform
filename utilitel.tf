@@ -17,11 +17,6 @@ data "terraform_remote_state" "utilitel_network" {
 }
 
 # Render a part using a `template_file`
-data "template_file" "backstage_script" {
-  template = "${file("${path.module}/modules/backstage_init.tpl")}"
-}
-
-# Render a part using a `template_file`
 data "template_file" "script" {
   template = "${file("${path.module}/modules/init.tpl")}"
 }
@@ -201,8 +196,33 @@ resource "aws_instance" "backstage" {
     subnet_id = "${aws_subnet.corp.id}"
     key_name = "utilitel-tools"
     security_groups = ["${aws_security_group.public_ssh.id}"]
-    user_data = "${data.template_file.backstage_script.rendered}"
+    user_data = "${data.template_file.script.rendered}"
     iam_instance_profile = "${aws_iam_instance_profile.backstage_instance_profile.id}"
+
+    provisioner "file" {
+      source = "ansible"
+      destination = "/home/ubuntu"
+      connection {
+        user = "ubuntu"
+        private_key = "${file(var.master_key)}"
+        agent = false
+      }
+    }
+
+    provisioner "remote-exec" {
+      inline = [
+        "while [ ! -f /tmp/signal ]; do sleep 2; done",
+        "chmod u+x /home/ubuntu/ansible/ec2.py" ,
+        "sudo pip install --upgrade pip",
+        "sudo pip install boto"
+      ]
+
+      connection {
+        user = "ubuntu"
+        private_key = "${file(var.master_key)}"
+        agent = false
+      }
+    }
 
     tags {
         Name = "backstage"
