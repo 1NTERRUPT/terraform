@@ -44,3 +44,12 @@
   command: pm2 start server.js --name app chdir=/srv/wikiserver/
   ignore_errors: yes
   when: app_stopped.changed
+
+- template:
+    src: templates/nginx.j2
+    dest: /etc/nginx/sites-available/wikiserver
+
+- service:
+    name: nginx
+    state: restarted
+
