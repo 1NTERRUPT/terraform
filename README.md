@@ -9,12 +9,14 @@
 
  # To deploy or make changes
  1. Make any changes you'd like
- 1. terraform pull
  1. terraform plan
  1. terraform apply
 
  # To tear down the environment
- 1. terraform pull
  1. terraform plan --destroy
  1. terraform destroy
 
+ # To configure the environment
+ 1. log in to the backstage server
+ 1. cd ansible
+ 1. ansible-playbook -i ec2.py utilitel.yml
