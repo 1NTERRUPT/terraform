@@ -190,6 +190,20 @@ resource "aws_security_group" "all_corp" {
     }
 }
 
+resource "aws_security_group" "tools" {
+    name = "tools"
+    description = "Allow all inbound rdp"
+    vpc_id = "${aws_vpc.main.id}"
+
+    ingress {
+        from_port = 0
+        to_port = 3389
+        protocol = "tcp"
+        cidr_blocks = ["0.0.0.0/0"]
+    }
+
+}
+
 resource "aws_instance" "backstage" {
     ami = "${data.aws_ami.ubuntu.id}"
     instance_type = "t2.micro"
@@ -255,7 +269,31 @@ resource "aws_instance" "wikiserver" {
     }
 }
 
+resource "aws_instance" "tools" {
+    ami = "${data.aws_ami.ubuntu.id}"
+    instance_type = "t2.medium"
+    subnet_id = "${aws_subnet.corp.id}"
+    key_name = "utilitel-tools"
+    security_groups = ["${aws_security_group.all_corp.id}", "${aws_security_group.tools.id}"]
+    user_data = "${data.template_file.script.rendered}"
+
+    tags {
+        Name = "tools"
+    }
+}
+
 output "backstage ip" {
   value = "${aws_instance.backstage.public_ip}"
 }
 
+output "tools ip" {
+  value = "${aws_instance.tools.public_ip}"
+}
+
+output "wiki internal ip" {
+  value = "${aws_instance.wikiserver.private_ip}"
+}
+
+output "file internal ip" {
+  value = "${aws_instance.fileserver.private_ip}"
+}

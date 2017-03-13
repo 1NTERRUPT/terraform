@@ -1,0 +1,44 @@
+---
+- name: Set the hostname
+  hostname:
+    name: tools
+  become: yes
+
+- name: Install Packages
+  apt: name={{ item }} update_cache=yes state=latest
+  with_items:
+    - xfce4
+    - xrdp
+    - nmap
+    - smbclient
+    - gvfs
+    - gvfs-backends
+    - sshfs
+    - gedit
+
+- user:
+    name: tools
+    password: $6$1nterrupt2017$mX2u3d8y2hYo6i.gXWs5IDakzWI5yVrSoaRyqPrSMPBT9WhnGFke3QdF01Wd9AulDV3iAWZZluJDg6W2grMIU1
+
+- name: setup xsession for tools user
+  command: echo xfce4-session >~tools/.xsession && chown tools:tools ~tools/.xsession
+
+- service:
+    name: xrdp
+    state: restarted
+
+- apt_key:
+    url: "https://dl-ssl.google.com/linux/linux_signing_key.pub"
+    state: present
+
+- apt_repository:
+    repo: deb http://dl.google.com/linux/chrome/deb/ stable main
+    state: present
+    filename: 'google-chrome'
+
+- name: install chrome
+  apt:
+    name: google-chrome-stable
+    state: latest
+    update_cache: yes
+    allow_unauthenticated: yes

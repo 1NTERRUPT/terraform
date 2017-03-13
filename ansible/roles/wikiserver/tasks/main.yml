@@ -45,9 +45,15 @@
   ignore_errors: yes
   when: app_stopped.changed
 
+- name: disable default nginx site
+  file: 
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  become: yes
+
 - template:
     src: templates/nginx.j2
-    dest: /etc/nginx/sites-available/wikiserver
+    dest: /etc/nginx/sites-enabled/wikiserver
 
 - service:
     name: nginx
