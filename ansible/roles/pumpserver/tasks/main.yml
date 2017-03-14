@@ -1,0 +1,59 @@
+---
+- name: Set the hostname
+  hostname:
+    name: pumpserver
+  become: yes
+
+- git:
+    repo: https://github.com/1NTERRUPT/ChemicalPlant.git
+    dest: /srv/pumpserver
+
+- name: Install Packages
+  apt: name={{ item }} update_cache=yes state=latest
+  with_items:
+    - build-essential
+    - npm
+    - nodejs-legacy
+    - git
+    - mcrypt
+    - nginx
+    - curl
+
+- name: Install pm2
+  npm: name=pm2 global=yes production=yes
+
+- name: Install pumpserver
+  npm:
+    path: /srv/pumpserver/webserver
+  register: npm_finished
+
+
+- name: Stop APP
+  sudo_user: ubuntu
+  command: pm2 stop server.js --name app
+  args:
+    chdir: /srv/pumpserver/webserver/
+  ignore_errors: yes
+  when: npm_finished.changed
+  register: app_stopped
+
+- name: Start APP
+  sudo_user: ubuntu
+  command: pm2 start server.js --name app chdir=/srv/pumpserver/webserver/
+  ignore_errors: yes
+  when: app_stopped.changed
+
+- name: disable default nginx site
+  file: 
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  become: yes
+
+- template:
+    src: templates/nginx.j2
+    dest: /etc/nginx/sites-enabled/pumpserver
+
+- service:
+    name: nginx
+    state: restarted
+

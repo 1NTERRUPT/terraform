@@ -1,5 +1,6 @@
 variable "region" { default = "us-east-1" }
 variable "main_cidr" { default = "10.0.0.0/16" }
+variable "hmi_cidr" { default = "172.0.0.0/16" }
 variable "cfg_bucket" { default = "1nterrupt-util" }
 variable "master_key" {}
 
@@ -21,16 +22,37 @@ data "template_file" "script" {
   template = "${file("${path.module}/modules/init.tpl")}"
 }
 
+data "aws_caller_identity" "current" { }
+
 resource "aws_vpc" "main" {
     cidr_block = "${var.main_cidr}"
     enable_dns_hostnames = true
     tags {
-        Name = "utilitel_vpc"
+        Name = "utilitel_main_vpc"
     }
+}
+
+resource "aws_vpc" "hmi" {
+    cidr_block = "${var.hmi_cidr}"
+    enable_dns_hostnames = true
+    tags {
+        Name = "utilitel_hmi_vpc"
+    }
+}
+
+resource "aws_vpc_peering_connection" "corp2hmi" {
+    peer_owner_id = "${data.aws_caller_identity.current.account_id}"
+    peer_vpc_id = "${aws_vpc.hmi.id}"
+    vpc_id = "${aws_vpc.main.id}"
+    auto_accept = true
 }
 
 resource "aws_internet_gateway" "gw" {
     vpc_id = "${aws_vpc.main.id}"
+}
+
+resource "aws_internet_gateway" "gw_hmi" {
+    vpc_id = "${aws_vpc.hmi.id}"
 }
 
 resource "aws_subnet" "corp" {
@@ -44,8 +66,10 @@ resource "aws_subnet" "corp" {
 }
 
 resource "aws_subnet" "hmi" {
-    vpc_id = "${aws_vpc.main.id}"
-    cidr_block = "${cidrsubnet(var.main_cidr, 8 ,2)}"
+    vpc_id = "${aws_vpc.hmi.id}"
+    cidr_block = "${cidrsubnet(var.hmi_cidr, 8 ,1)}"
+    map_public_ip_on_launch = true
+    depends_on = ["aws_internet_gateway.gw_hmi"]
     tags {
         Name = "utilitel_hmi"
     }
@@ -53,6 +77,10 @@ resource "aws_subnet" "hmi" {
 
 resource "aws_route_table" "corp" {
     vpc_id = "${aws_vpc.main.id}"
+    route {
+        cidr_block = "${aws_vpc.hmi.cidr_block}"
+        vpc_peering_connection_id = "${aws_vpc_peering_connection.corp2hmi.id}"
+    }
     route {
         cidr_block = "0.0.0.0/0"
         gateway_id = "${aws_internet_gateway.gw.id}"
@@ -62,6 +90,22 @@ resource "aws_route_table" "corp" {
 resource "aws_route_table_association" "corp" {
     subnet_id = "${aws_subnet.corp.id}"
     route_table_id = "${aws_route_table.corp.id}"
+}
+resource "aws_route_table" "hmi" {
+    vpc_id = "${aws_vpc.hmi.id}"
+    route {
+        cidr_block = "${aws_vpc.main.cidr_block}"
+        vpc_peering_connection_id = "${aws_vpc_peering_connection.corp2hmi.id}"
+    }
+    route {
+        cidr_block = "0.0.0.0/0"
+        gateway_id = "${aws_internet_gateway.gw_hmi.id}"
+    }
+}
+
+resource "aws_route_table_association" "hmi" {
+    subnet_id = "${aws_subnet.hmi.id}"
+    route_table_id = "${aws_route_table.hmi.id}"
 }
 
 data "aws_ami" "ubuntu" {
@@ -179,7 +223,27 @@ resource "aws_security_group" "all_corp" {
         from_port = 0
         to_port = 0
         protocol = "-1"
-        cidr_blocks = ["${aws_subnet.corp.cidr_block}"]
+        cidr_blocks = ["${aws_subnet.corp.cidr_block}","${aws_subnet.hmi.cidr_block}"]
+    }
+
+    egress {
+        from_port = 0
+        to_port = 0
+        protocol = "-1"
+        cidr_blocks = ["0.0.0.0/0"]
+    }
+}
+
+resource "aws_security_group" "all_hmi" {
+    name = "all_hmi"
+    description = "Allow all inbound ssh traffic"
+    vpc_id = "${aws_vpc.hmi.id}"
+
+    ingress {
+        from_port = 0
+        to_port = 0
+        protocol = "-1"
+        cidr_blocks = ["${aws_subnet.corp.cidr_block}", "${aws_subnet.hmi.cidr_block}"]
     }
 
     egress {
@@ -279,6 +343,19 @@ resource "aws_instance" "tools" {
 
     tags {
         Name = "tools"
+    }
+}
+
+resource "aws_instance" "pumpserver" {
+    ami = "${data.aws_ami.ubuntu.id}"
+    instance_type = "t2.micro"
+    subnet_id = "${aws_subnet.hmi.id}"
+    key_name = "utilitel-tools"
+    security_groups = ["${aws_security_group.all_hmi.id}"]
+    user_data = "${data.template_file.script.rendered}"
+
+    tags {
+        Name = "pumpserver"
     }
 }
 

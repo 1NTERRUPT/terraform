@@ -19,3 +19,8 @@
   become: true
   roles:
     - tools
+
+- hosts: tag_Name_pumpserver
+  become: true
+  roles:
+    - pumpserver
