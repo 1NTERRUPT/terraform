@@ -37,7 +37,7 @@ resource "aws_vpc" "main" {
     enable_dns_hostnames = true
     tags {
         Name = "utilitel_main_vpc"
-        team = "${team}"
+        team = "${var.team}"
     }
 }
 
@@ -46,7 +46,7 @@ resource "aws_vpc" "hmi" {
     enable_dns_hostnames = true
     tags {
         Name = "utilitel_hmi_vpc"
-        team = "${team}"
+        team = "${var.team}"
     }
 }
 
@@ -72,7 +72,7 @@ resource "aws_subnet" "corp" {
     depends_on = ["aws_internet_gateway.gw"]
     tags {
         Name = "utilitel_corp"
-        team = "${team}"
+        team = "${var.team}"
     }
 }
 
@@ -83,7 +83,7 @@ resource "aws_subnet" "hmi" {
     depends_on = ["aws_internet_gateway.gw_hmi"]
     tags {
         Name = "utilitel_hmi"
-        team = "${team}"
+        team = "${var.team}"
     }
 }
 
