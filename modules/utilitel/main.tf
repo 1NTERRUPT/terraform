@@ -1,7 +1,8 @@
-variable "region" { default = "us-east-1" }
-variable "main_cidr" { default = "10.0.0.0/16" }
-variable "hmi_cidr" { default = "172.0.0.0/16" }
-variable "cfg_bucket" { default = "1nterrupt-util" }
+variable "team" {}
+variable "region" {}
+variable "main_cidr" {}
+variable "hmi_cidr" {}
+variable "cfg_bucket" {}
 variable "master_key" {}
 
 provider "aws" {
@@ -19,7 +20,14 @@ data "terraform_remote_state" "utilitel_network" {
 
 # Render a part using a `template_file`
 data "template_file" "script" {
-  template = "${file("${path.module}/modules/init.tpl")}"
+  template = "${file("${path.module}/init.tpl")}"
+}
+
+data "template_file" "ec2_ini" {
+  template = "${file("${path.module}/ec2.ini")}"
+  vars {
+      team = "${var.team}"
+  }
 }
 
 data "aws_caller_identity" "current" { }
@@ -29,6 +37,7 @@ resource "aws_vpc" "main" {
     enable_dns_hostnames = true
     tags {
         Name = "utilitel_main_vpc"
+        team = "${team}"
     }
 }
 
@@ -37,6 +46,7 @@ resource "aws_vpc" "hmi" {
     enable_dns_hostnames = true
     tags {
         Name = "utilitel_hmi_vpc"
+        team = "${team}"
     }
 }
 
@@ -62,6 +72,7 @@ resource "aws_subnet" "corp" {
     depends_on = ["aws_internet_gateway.gw"]
     tags {
         Name = "utilitel_corp"
+        team = "${team}"
     }
 }
 
@@ -72,6 +83,7 @@ resource "aws_subnet" "hmi" {
     depends_on = ["aws_internet_gateway.gw_hmi"]
     tags {
         Name = "utilitel_hmi"
+        team = "${team}"
     }
 }
 
@@ -122,7 +134,7 @@ data "aws_ami" "ubuntu" {
 }
 
 resource "aws_iam_role" "backstage_iam_role" {
-    name = "backstage_iam_role"
+    name = "backstage_iam_role_${var.team}"
     assume_role_policy = <<EOF
 {
     "Version": "2012-10-17",
@@ -141,12 +153,12 @@ EOF
 }
 
 resource "aws_iam_instance_profile" "backstage_instance_profile" {
-    name = "backstage_instance_profile"
-    roles = ["backstage_iam_role"]
+    name = "backstage_instance_profile_${var.team}"
+    roles = ["backstage_iam_role_${var.team}"]
 }
 
 resource "aws_iam_role_policy" "backstage_iam_role_policy" {
-    name = "backstage_iam_role_policy"
+    name = "backstage_iam_role_policy_${var.team}"
     role = "${aws_iam_role.backstage_iam_role.id}"
     policy = <<EOF
 {
@@ -287,6 +299,17 @@ resource "aws_instance" "backstage" {
       }
     }
 
+    provisioner "file" {
+        content = "${data.template_file.ec2_ini.rendered}"
+        destination = "/home/ubuntu/ansible/ec2.ini"
+        connection {
+            user = "ubuntu"
+            private_key = "${file(var.master_key)}"
+            agent = false
+        }
+    }
+
+
     provisioner "remote-exec" {
       inline = [
         "while [ ! -f /tmp/signal ]; do sleep 2; done",
@@ -304,6 +327,7 @@ resource "aws_instance" "backstage" {
 
     tags {
         Name = "backstage"
+        team = "${var.team}"
     }
 }
 
@@ -317,6 +341,7 @@ resource "aws_instance" "fileserver" {
 
     tags {
         Name = "fileserver"
+        team = "${var.team}"
     }
 }
 
@@ -330,6 +355,7 @@ resource "aws_instance" "wikiserver" {
 
     tags {
         Name = "wikiserver"
+        team = "${var.team}"
     }
 }
 
@@ -343,6 +369,7 @@ resource "aws_instance" "tools" {
 
     tags {
         Name = "tools"
+        team = "${var.team}"
     }
 }
 
@@ -356,21 +383,22 @@ resource "aws_instance" "pumpserver" {
 
     tags {
         Name = "pumpserver"
+        team = "${var.team}"
     }
 }
 
-output "backstage ip" {
+output "backstage_ip" {
   value = "${aws_instance.backstage.public_ip}"
 }
 
-output "tools ip" {
+output "tools_ip" {
   value = "${aws_instance.tools.public_ip}"
 }
 
-output "wiki internal ip" {
+output "wiki_internal_ip" {
   value = "${aws_instance.wikiserver.private_ip}"
 }
 
-output "file internal ip" {
+output "file_internal_ip" {
   value = "${aws_instance.fileserver.private_ip}"
 }
