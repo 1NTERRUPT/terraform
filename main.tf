@@ -1,13 +1,18 @@
 variable "master_key" {}
 variable "team" {}
+variable "pub_cidr" {}
+variable "corp_cidr" {}
+variable "hmi_cidr" {}
+variable "cfg_bucket" {}
 
 module "utilitel_1" {
     source = "./modules/utilitel"
     team   = "${var.team}"
     region = "us-east-1"
-    main_cidr = "10.0.0.0/16"
-    hmi_cidr = "172.0.0.0/16"
-    cfg_bucket = "1nterrupt-util"
+    pub_cidr = "${var.pub_cidr}"
+    corp_cidr = "${var.corp_cidr}"
+    hmi_cidr = "${var.hmi_cidr}"
+    cfg_bucket = "${var.cfg_bucket}"
     master_key = "${var.master_key}"
 }
 

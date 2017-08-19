@@ -1,6 +1,7 @@
 variable "team" {}
 variable "region" {}
-variable "main_cidr" {}
+variable "pub_cidr" {}
+variable "corp_cidr" {}
 variable "hmi_cidr" {}
 variable "cfg_bucket" {}
 variable "master_key" {}
@@ -32,11 +33,11 @@ data "template_file" "ec2_ini" {
 
 data "aws_caller_identity" "current" { }
 
-resource "aws_vpc" "main" {
-    cidr_block = "${var.main_cidr}"
+resource "aws_vpc" "corp" {
+    cidr_block = "${var.corp_cidr}"
     enable_dns_hostnames = true
     tags {
-        Name = "utilitel_main_vpc"
+        Name = "utilitel_corp_vpc"
         team = "${var.team}"
     }
 }
@@ -53,12 +54,12 @@ resource "aws_vpc" "hmi" {
 resource "aws_vpc_peering_connection" "corp2hmi" {
     peer_owner_id = "${data.aws_caller_identity.current.account_id}"
     peer_vpc_id = "${aws_vpc.hmi.id}"
-    vpc_id = "${aws_vpc.main.id}"
+    vpc_id = "${aws_vpc.corp.id}"
     auto_accept = true
 }
 
 resource "aws_internet_gateway" "gw" {
-    vpc_id = "${aws_vpc.main.id}"
+    vpc_id = "${aws_vpc.corp.id}"
 }
 
 resource "aws_internet_gateway" "gw_hmi" {
@@ -66,8 +67,8 @@ resource "aws_internet_gateway" "gw_hmi" {
 }
 
 resource "aws_subnet" "corp" {
-    vpc_id = "${aws_vpc.main.id}"
-    cidr_block = "${cidrsubnet(var.main_cidr, 8 ,1)}"
+    vpc_id = "${aws_vpc.corp.id}"
+    cidr_block = "${cidrsubnet(var.corp_cidr, 8 ,1)}"
     map_public_ip_on_launch = true
     depends_on = ["aws_internet_gateway.gw"]
     tags {
@@ -88,7 +89,7 @@ resource "aws_subnet" "hmi" {
 }
 
 resource "aws_route_table" "corp" {
-    vpc_id = "${aws_vpc.main.id}"
+    vpc_id = "${aws_vpc.corp.id}"
     route {
         cidr_block = "${aws_vpc.hmi.cidr_block}"
         vpc_peering_connection_id = "${aws_vpc_peering_connection.corp2hmi.id}"
@@ -106,7 +107,7 @@ resource "aws_route_table_association" "corp" {
 resource "aws_route_table" "hmi" {
     vpc_id = "${aws_vpc.hmi.id}"
     route {
-        cidr_block = "${aws_vpc.main.cidr_block}"
+        cidr_block = "${aws_vpc.corp.cidr_block}"
         vpc_peering_connection_id = "${aws_vpc_peering_connection.corp2hmi.id}"
     }
     route {
@@ -209,7 +210,7 @@ EOF
 resource "aws_security_group" "public_ssh" {
     name = "allow_ssh"
     description = "Allow all inbound ssh traffic"
-    vpc_id = "${aws_vpc.main.id}"
+    vpc_id = "${aws_vpc.corp.id}"
 
     ingress {
         from_port = 22
@@ -229,7 +230,7 @@ resource "aws_security_group" "public_ssh" {
 resource "aws_security_group" "all_corp" {
     name = "all_corp"
     description = "Allow all inbound ssh traffic"
-    vpc_id = "${aws_vpc.main.id}"
+    vpc_id = "${aws_vpc.corp.id}"
 
     ingress {
         from_port = 0
@@ -269,7 +270,7 @@ resource "aws_security_group" "all_hmi" {
 resource "aws_security_group" "tools" {
     name = "tools"
     description = "Allow all inbound rdp"
-    vpc_id = "${aws_vpc.main.id}"
+    vpc_id = "${aws_vpc.corp.id}"
 
     ingress {
         from_port = 0
