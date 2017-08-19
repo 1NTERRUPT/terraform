@@ -33,6 +33,15 @@ data "template_file" "ec2_ini" {
 
 data "aws_caller_identity" "current" { }
 
+resource "aws_vpc" "pub" {
+    cidr_block = "${var.pub_cidr}"
+    enable_dns_hostnames = true
+    tags {
+        Name = "utilitel_pub_vpc"
+        team = "${var.team}"
+    }
+}
+
 resource "aws_vpc" "corp" {
     cidr_block = "${var.corp_cidr}"
     enable_dns_hostnames = true
@@ -51,14 +60,25 @@ resource "aws_vpc" "hmi" {
     }
 }
 
-resource "aws_vpc_peering_connection" "corp2hmi" {
+resource "aws_vpc_peering_connection" "pub2corp" {
     peer_owner_id = "${data.aws_caller_identity.current.account_id}"
-    peer_vpc_id = "${aws_vpc.hmi.id}"
-    vpc_id = "${aws_vpc.corp.id}"
+    peer_vpc_id = "${aws_vpc.corp.id}"
+    vpc_id = "${aws_vpc.pub.id}"
     auto_accept = true
 }
 
-resource "aws_internet_gateway" "gw" {
+resource "aws_vpc_peering_connection" "pub2hmi" {
+    peer_owner_id = "${data.aws_caller_identity.current.account_id}"
+    peer_vpc_id = "${aws_vpc.hmi.id}"
+    vpc_id = "${aws_vpc.pub.id}"
+    auto_accept = true
+}
+
+resource "aws_internet_gateway" "gw_pub" {
+    vpc_id = "${aws_vpc.pub.id}"
+}
+
+resource "aws_internet_gateway" "gw_corp" {
     vpc_id = "${aws_vpc.corp.id}"
 }
 
@@ -66,11 +86,22 @@ resource "aws_internet_gateway" "gw_hmi" {
     vpc_id = "${aws_vpc.hmi.id}"
 }
 
+resource "aws_subnet" "pub" {
+    vpc_id = "${aws_vpc.pub.id}"
+    cidr_block = "${cidrsubnet(var.pub_cidr, 8 ,1)}"
+    map_public_ip_on_launch = true
+    depends_on = ["aws_internet_gateway.gw_pub"]
+    tags {
+        Name = "utilitel_pub"
+        team = "${var.team}"
+    }
+}
+
 resource "aws_subnet" "corp" {
     vpc_id = "${aws_vpc.corp.id}"
     cidr_block = "${cidrsubnet(var.corp_cidr, 8 ,1)}"
     map_public_ip_on_launch = true
-    depends_on = ["aws_internet_gateway.gw"]
+    depends_on = ["aws_internet_gateway.gw_corp"]
     tags {
         Name = "utilitel_corp"
         team = "${var.team}"
@@ -88,15 +119,36 @@ resource "aws_subnet" "hmi" {
     }
 }
 
-resource "aws_route_table" "corp" {
-    vpc_id = "${aws_vpc.corp.id}"
+resource "aws_route_table" "pub" {
+    vpc_id = "${aws_vpc.pub.id}"
     route {
         cidr_block = "${aws_vpc.hmi.cidr_block}"
-        vpc_peering_connection_id = "${aws_vpc_peering_connection.corp2hmi.id}"
+        vpc_peering_connection_id = "${aws_vpc_peering_connection.pub2hmi.id}"
+    }
+    route {
+        cidr_block = "${aws_vpc.corp.cidr_block}"
+        vpc_peering_connection_id = "${aws_vpc_peering_connection.pub2corp.id}"
     }
     route {
         cidr_block = "0.0.0.0/0"
-        gateway_id = "${aws_internet_gateway.gw.id}"
+        gateway_id = "${aws_internet_gateway.gw_pub.id}"
+    }
+}
+
+resource "aws_route_table_association" "pub" {
+    subnet_id = "${aws_subnet.pub.id}"
+    route_table_id = "${aws_route_table.pub.id}"
+}
+
+resource "aws_route_table" "corp" {
+    vpc_id = "${aws_vpc.corp.id}"
+    route {
+        cidr_block = "${aws_vpc.pub.cidr_block}"
+        vpc_peering_connection_id = "${aws_vpc_peering_connection.pub2corp.id}"
+    }
+    route {
+        cidr_block = "0.0.0.0/0"
+        gateway_id = "${aws_internet_gateway.gw_corp.id}"
     }
 }
 
@@ -104,11 +156,12 @@ resource "aws_route_table_association" "corp" {
     subnet_id = "${aws_subnet.corp.id}"
     route_table_id = "${aws_route_table.corp.id}"
 }
+
 resource "aws_route_table" "hmi" {
     vpc_id = "${aws_vpc.hmi.id}"
     route {
-        cidr_block = "${aws_vpc.corp.cidr_block}"
-        vpc_peering_connection_id = "${aws_vpc_peering_connection.corp2hmi.id}"
+        cidr_block = "${aws_vpc.pub.cidr_block}"
+        vpc_peering_connection_id = "${aws_vpc_peering_connection.pub2hmi.id}"
     }
     route {
         cidr_block = "0.0.0.0/0"
@@ -210,13 +263,33 @@ EOF
 resource "aws_security_group" "public_ssh" {
     name = "allow_ssh"
     description = "Allow all inbound ssh traffic"
-    vpc_id = "${aws_vpc.corp.id}"
+    vpc_id = "${aws_vpc.pub.id}"
 
     ingress {
         from_port = 22
         to_port = 22
         protocol = "tcp"
         cidr_blocks = ["0.0.0.0/0"]
+    }
+
+    egress {
+        from_port = 0
+        to_port = 0
+        protocol = "-1"
+        cidr_blocks = ["0.0.0.0/0"]
+    }
+}
+
+resource "aws_security_group" "all_pub" {
+    name = "all_corp"
+    description = "Allow all inbound ssh traffic"
+    vpc_id = "${aws_vpc.pub.id}"
+
+    ingress {
+        from_port = 0
+        to_port = 0
+        protocol = "-1"
+        cidr_blocks = ["${aws_subnet.pub.cidr_block}","${aws_subnet.corp.cidr_block}","${aws_subnet.hmi.cidr_block}"]
     }
 
     egress {
@@ -236,7 +309,7 @@ resource "aws_security_group" "all_corp" {
         from_port = 0
         to_port = 0
         protocol = "-1"
-        cidr_blocks = ["${aws_subnet.corp.cidr_block}","${aws_subnet.hmi.cidr_block}"]
+        cidr_blocks = ["${aws_subnet.pub.cidr_block}","${aws_subnet.corp.cidr_block}","${aws_subnet.hmi.cidr_block}"]
     }
 
     egress {
@@ -256,7 +329,7 @@ resource "aws_security_group" "all_hmi" {
         from_port = 0
         to_port = 0
         protocol = "-1"
-        cidr_blocks = ["${aws_subnet.corp.cidr_block}", "${aws_subnet.hmi.cidr_block}"]
+        cidr_blocks = ["${aws_subnet.pub.cidr_block}","${aws_subnet.corp.cidr_block}", "${aws_subnet.hmi.cidr_block}"]
     }
 
     egress {
@@ -270,7 +343,7 @@ resource "aws_security_group" "all_hmi" {
 resource "aws_security_group" "tools" {
     name = "tools"
     description = "Allow all inbound rdp"
-    vpc_id = "${aws_vpc.corp.id}"
+    vpc_id = "${aws_vpc.pub.id}"
 
     ingress {
         from_port = 0
@@ -284,7 +357,7 @@ resource "aws_security_group" "tools" {
 resource "aws_instance" "backstage" {
     ami = "${data.aws_ami.ubuntu.id}"
     instance_type = "t2.micro"
-    subnet_id = "${aws_subnet.corp.id}"
+    subnet_id = "${aws_subnet.pub.id}"
     key_name = "utilitel-tools"
     security_groups = ["${aws_security_group.public_ssh.id}"]
     user_data = "${data.template_file.script.rendered}"
@@ -363,9 +436,9 @@ resource "aws_instance" "wikiserver" {
 resource "aws_instance" "tools" {
     ami = "${data.aws_ami.ubuntu.id}"
     instance_type = "t2.medium"
-    subnet_id = "${aws_subnet.corp.id}"
+    subnet_id = "${aws_subnet.pub.id}"
     key_name = "utilitel-tools"
-    security_groups = ["${aws_security_group.all_corp.id}", "${aws_security_group.tools.id}"]
+    security_groups = ["${aws_security_group.all_pub.id}", "${aws_security_group.tools.id}"]
     user_data = "${data.template_file.script.rendered}"
 
     tags {
