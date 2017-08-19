@@ -18,7 +18,8 @@
 
 - user:
     name: tools
-    password: $6$1nterrupt2017$mX2u3d8y2hYo6i.gXWs5IDakzWI5yVrSoaRyqPrSMPBT9WhnGFke3QdF01Wd9AulDV3iAWZZluJDg6W2grMIU1
+    password: $1$1nterrup$q7vyWA46q5SFch.X81I.V/
+
 
 - name: setup xsession for tools user
   command: echo xfce4-session >~tools/.xsession && chown tools:tools ~tools/.xsession
