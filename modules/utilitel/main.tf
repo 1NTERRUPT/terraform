@@ -405,6 +405,20 @@ resource "aws_instance" "backstage" {
     }
 }
 
+resource "aws_instance" "pub-fileserver" {
+    ami = "${data.aws_ami.ubuntu.id}"
+    instance_type = "t2.micro"
+    subnet_id = "${aws_subnet.pub.id}"
+    key_name = "utilitel-tools"
+    security_groups = ["${aws_security_group.all_pub.id}"]
+    user_data = "${data.template_file.script.rendered}"
+
+    tags {
+        Name = "pub-fileserver"
+        team = "${var.team}"
+    }
+}
+
 resource "aws_instance" "fileserver" {
     ami = "${data.aws_ami.ubuntu.id}"
     instance_type = "t2.micro"

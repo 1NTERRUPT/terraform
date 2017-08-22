@@ -23,11 +23,3 @@ output "backstage ip" {
 output "tools ip" {
   value = "${module.utilitel_1.tools_ip}"
 }
-
-output "wiki internal ip" {
-  value = "${module.utilitel_1.wiki_internal_ip}"
-}
-
-output "file internal ip" {
-  value = "${module.utilitel_1.file_internal_ip}"
-}
