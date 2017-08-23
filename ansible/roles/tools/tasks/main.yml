@@ -15,6 +15,7 @@
     - gvfs-backends
     - sshfs
     - gedit
+    - firefox
 
 - name: Make sure we have a 'wheel' group
   group:
@@ -56,3 +57,19 @@
     state: latest
     update_cache: yes
     allow_unauthenticated: yes
+
+- name: Install 1NTERRUPT directory
+  file:
+    path: "/home/tools/Desktop/1NTERRUPT"
+    state: directory
+    owner: tools
+    group: tools
+    mode: 0755
+
+- name: Copy files to 1NTERRUPT directory
+  copy:
+    src: /tmp/scenario_support/toolsJumpbox/1NTERRUPT/
+    dest: /home/tools/Desktop/1NTERRUPT/
+    owner: tools
+    group: tools
+
