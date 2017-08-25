@@ -1,7 +1,7 @@
 ---
 - name: Set the hostname
   hostname:
-    name: pumpserver
+    name: ops-pumpshmi01
   become: yes
 
 - git:

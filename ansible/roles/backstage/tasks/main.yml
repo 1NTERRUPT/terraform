@@ -18,7 +18,7 @@
     mode: 0700
 
 - name: Create scenario folder
-  file: path=/tmp/scenario_support/fileserver state=directory owner=ubuntu group=ubuntu 
+  file: path=/tmp/scenario_support/corp-file01 state=directory owner=ubuntu group=ubuntu 
 
 - name: Download scenario support files
   command: "aws s3 cp --recursive s3://1nterrupt-scenario-support /tmp/scenario_support/"

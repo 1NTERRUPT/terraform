@@ -34,7 +34,6 @@
     password: $1$1nterrup$q7vyWA46q5SFch.X81I.V/
     groups: wheel
 
-
 - name: setup xsession for tools user
   command: echo xfce4-session >~tools/.xsession && chown tools:tools ~tools/.xsession
 
