@@ -5,8 +5,14 @@
   become: yes
 
 - git:
-    repo: https://github.com/1NTERRUPT/ChemicalPlant.git
+    repo: https://github.com/1NTERRUPT/water-processing
     dest: /srv/pumpserver
+
+- file:
+    path: /srv/pumpserver
+    state: directory
+    mode: 0755
+    owner: ubuntu
 
 - name: Install Packages
   apt: name={{ item }} update_cache=yes state=latest
@@ -18,30 +24,36 @@
     - mcrypt
     - nginx
     - curl
-
-- name: Install pm2
-  npm: name=pm2 global=yes production=yes
+    - ruby-full
+    - ruby-bundler
+    - sqlite3 
+    - libsqlite3-dev
 
 - name: Install pumpserver
-  npm:
-    path: /srv/pumpserver/webserver
-  register: npm_finished
+  bundler:
+      state: present
+      chdir: /srv/pumpserver
+  become: no
 
+- name: migrate database
+  command: bundle exec rake db:migrate RAILS_ENV="production" chdir=/srv/pumpserver
+  become: no
 
-- name: Stop APP
-  sudo_user: ubuntu
-  command: pm2 stop server.js --name app
-  args:
-    chdir: /srv/pumpserver/webserver/
-  ignore_errors: yes
-  when: npm_finished.changed
-  register: app_stopped
+- name: tmp clear
+  command: bundle exec rake tmp:clear chdir=/srv/pumpserver
+  become: no
 
-- name: Start APP
-  sudo_user: ubuntu
-  command: pm2 start server.js --name app chdir=/srv/pumpserver/webserver/
-  ignore_errors: yes
-  when: app_stopped.changed
+- name: log clear
+  command: bundle exec rake log:clear chdir=/srv/pumpserver
+  become: no
+
+- name: setup seed data
+  command: bundle exec rake db:seed chdir=/srv/pumpserver
+  become: no
+
+  #- name: update cron jobs
+  #  command: bundle exec whenever --update-crontab chdir=/srv/pumpserver
+  #  become: yes
 
 - name: disable default nginx site
   file: 
@@ -52,6 +64,15 @@
 - template:
     src: templates/nginx.j2
     dest: /etc/nginx/sites-enabled/pumpserver
+
+- template:
+    src: templates/pumpserver.j2
+    dest: /etc/init/pumpserver.sh
+  become: yes
+
+- service:
+    name: pumpserver
+    state: restarted
 
 - service:
     name: nginx

@@ -1,0 +1,24 @@
+description "Pump server"
+
+start on startup
+stop on (stopping {{ app_name }}-manager or runlevel [06])
+
+# change apps to match your deployment user if you want to use this as a less privileged user (recommended!)
+setuid {{ default_user }}
+setgid {{ default_user }}
+env HOME=/home/{{ default_user }}
+env LANG=en_US.UTF-8
+
+respawn
+respawn limit 3 30
+
+script
+# this script runs in /bin/sh by default
+# respawn as bash so we can source in rbenv/rvm
+# quoted heredoc to tell /bin/sh not to interpret
+# variables
+
+cd /srv/pumpserver
+bundle exec rails s
+
+end script
