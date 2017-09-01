@@ -8,11 +8,9 @@
     repo: https://github.com/1NTERRUPT/water-processing
     dest: /srv/pumpserver
 
-- file:
-    path: /srv/pumpserver
-    state: directory
-    mode: 0755
-    owner: ubuntu
+- name: Setup server permissions
+  command: chown -R ubuntu:ubuntu /srv/pumpserver
+  become: yes
 
 - name: Install Packages
   apt: name={{ item }} update_cache=yes state=latest

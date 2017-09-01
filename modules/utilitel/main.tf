@@ -6,6 +6,11 @@ variable "hmi_cidr" {}
 variable "cfg_bucket" {}
 variable "master_key" {}
 
+data "aws_route53_zone" "events" {
+  name = "events.1nterrupt.com"
+}
+
+
 provider "aws" {
     region = "${var.region}"
 }
@@ -459,6 +464,14 @@ resource "aws_instance" "tools" {
         Name = "tools"
         team = "${var.team}"
     }
+}
+
+resource "aws_route53_record" "tools_ext" {
+  zone_id = "${data.aws_route53_zone.events.zone_id}"
+  name    = "${var.team}.${data.aws_route53_zone.events.name}"
+  type    = "A"
+  ttl     = "300"
+  records = ["${aws_instance.tools.public_ip}"]
 }
 
 resource "aws_instance" "pumpserver" {
