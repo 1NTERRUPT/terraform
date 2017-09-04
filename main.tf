@@ -1,25 +1,26 @@
 variable "master_key" {}
-variable "team" {}
-variable "pub_cidr" {}
-variable "corp_cidr" {}
-variable "hmi_cidr" {}
+variable "cidrs" { type = "map" }
 variable "cfg_bucket" {}
+variable "region" { default = "us-east-1" }
 
-module "utilitel_1" {
+variable "control" { default = "control" }
+
+module "utilitel" {
     source = "./modules/utilitel"
-    team   = "${var.team}"
-    region = "us-east-1"
-    pub_cidr = "${var.pub_cidr}"
-    corp_cidr = "${var.corp_cidr}"
-    hmi_cidr = "${var.hmi_cidr}"
+    region = "${var.region}"
+    cidrs = "${var.cidrs}"
     cfg_bucket = "${var.cfg_bucket}"
+    team_count = 1
+}
+
+module "control" {
+    source = "./modules/control"
+    cidr = "${var.cidrs[var.control]}"
     master_key = "${var.master_key}"
-}
-
-output "backstage ip" {
-  value = "${module.utilitel_1.backstage_ip}"
-}
-
-output "tools ip" {
-  value = "${module.utilitel_1.tools_ip}"
+    region = "${var.region}"
+    vpc_ids = "${module.utilitel.vpc_ids}"
+    cidrs = "${var.cidrs}"
+    internal_cidr_blocks = "${module.utilitel.internal_cidr_blocks}"
+    internal_route_tables = "${module.utilitel.route_tables}"
+    team_count = 1
 }
