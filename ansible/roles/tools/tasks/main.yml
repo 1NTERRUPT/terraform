@@ -68,6 +68,7 @@
     owner: "tools{{ item }}"
     group: "tools{{ item }}"
     mode: 0755
+  with_sequence: start=0 end=32
 
 - name: Copy files to 1NTERRUPT directory
   copy:
@@ -75,4 +76,4 @@
     dest: "/home/tools{{ item }}/Desktop/1NTERRUPT/"
     owner: "tools{{ item }}"
     group: "tools{{ item }}"
-
+  with_sequence: start=0 end=32
