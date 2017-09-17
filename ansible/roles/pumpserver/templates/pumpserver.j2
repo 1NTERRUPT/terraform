@@ -1,12 +1,12 @@
 description "Pump server"
 
 start on startup
-stop on (stopping {{ app_name }}-manager or runlevel [06])
+stop on (stopping pumpserver-manager or runlevel [06])
 
 # change apps to match your deployment user if you want to use this as a less privileged user (recommended!)
-setuid {{ default_user }}
-setgid {{ default_user }}
-env HOME=/home/{{ default_user }}
+setuid ubuntu
+setgid ubuntu
+env HOME=/home/ubuntu
 env LANG=en_US.UTF-8
 
 respawn

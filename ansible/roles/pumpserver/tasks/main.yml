@@ -38,15 +38,15 @@
   become: no
 
 - name: tmp clear
-  command: bundle exec rake tmp:clear chdir=/srv/pumpserver
+  command: bundle exec rake tmp:clear RAILS_ENV="production" chdir=/srv/pumpserver
   become: no
 
 - name: log clear
-  command: bundle exec rake log:clear chdir=/srv/pumpserver
+  command: bundle exec rake log:clear RAILS_ENV="production" chdir=/srv/pumpserver
   become: no
 
 - name: setup seed data
-  command: bundle exec rake db:seed chdir=/srv/pumpserver
+  command: bundle exec rake db:seed RAILS_ENV="production" chdir=/srv/pumpserver
   become: no
 
   #- name: update cron jobs
@@ -65,7 +65,7 @@
 
 - template:
     src: templates/pumpserver.j2
-    dest: /etc/init/pumpserver.sh
+    dest: /etc/init/pumpserver.conf
   become: yes
 
 - service:
