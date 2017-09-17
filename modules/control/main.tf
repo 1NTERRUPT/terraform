@@ -307,7 +307,7 @@ resource "aws_instance" "backstage" {
     }
 }
 
-resource "aws_route53_record" "tools_ext" {
+resource "aws_route53_record" "backstage_ext" {
   zone_id = "${data.aws_route53_zone.events.zone_id}"
   name    = "backstage.${data.aws_route53_zone.events.name}"
   type    = "A"

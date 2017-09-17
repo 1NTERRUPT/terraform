@@ -29,13 +29,17 @@
     regexp: '^%wheel'
     line: '%wheel ALL=(ALL) NOPASSWD: ALL'
 
-- user:
-    name: tools
+- name: add all tools users
+  user:
+    name: "tools{{ item }}"
     password: $1$1nterrup$q7vyWA46q5SFch.X81I.V/
     groups: wheel
+  with_sequence: start=0 end=32
+
 
 - name: setup xsession for tools user
-  command: echo xfce4-session >~tools/.xsession && chown tools:tools ~tools/.xsession
+  command: "echo xfce4-session >~tools{{ item }}/.xsession && chown tools{{ item }}:tools{{ item }} ~tools{{ item }}/.xsession"
+  with_sequence: start=0 end=32
 
 - service:
     name: xrdp
@@ -59,16 +63,16 @@
 
 - name: Install 1NTERRUPT directory
   file:
-    path: "/home/tools/Desktop/1NTERRUPT"
+    path: "/home/tools{{ item }}/Desktop/1NTERRUPT"
     state: directory
-    owner: tools
-    group: tools
+    owner: "tools{{ item }}"
+    group: "tools{{ item }}"
     mode: 0755
 
 - name: Copy files to 1NTERRUPT directory
   copy:
     src: /tmp/scenario_support/toolsJumpbox/1NTERRUPT/
-    dest: /home/tools/Desktop/1NTERRUPT/
-    owner: tools
-    group: tools
+    dest: "/home/tools{{ item }}/Desktop/1NTERRUPT/"
+    owner: "tools{{ item }}"
+    group: "tools{{ item }}"
 
