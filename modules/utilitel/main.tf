@@ -102,7 +102,7 @@ resource "aws_security_group" "all_hmi" {
 
 
 
-resource "aws_instance" "fileserver" {
+resource "aws_instance" "corpfile01" {
     ami = "${data.aws_ami.ubuntu.id}"
     instance_type = "t2.micro"
     subnet_id = "${element(module.network.subnet_ids[var.corporate],count.index)}"
@@ -111,7 +111,7 @@ resource "aws_instance" "fileserver" {
     user_data = "${data.template_file.script.rendered}"
 
     tags {
-        Name = "fileserver"
+        Name = "corpfile01"
         team = "${var.team_count}"
     }
 }
@@ -126,6 +126,20 @@ resource "aws_instance" "wikiserver" {
 
     tags {
         Name = "wikiserver"
+        team = "${var.team_count}"
+    }
+}
+
+resource "aws_instance" "corpblog01" {
+    ami = "${data.aws_ami.ubuntu.id}"
+    instance_type = "t2.micro"
+    subnet_id = "${element(module.network.subnet_ids[var.corporate],count.index)}"
+    key_name = "utilitel-tools"
+    security_groups = ["${aws_security_group.all_corp.id}"]
+    user_data = "${data.template_file.script.rendered}"
+
+    tags {
+        Name = "corpblog01"
         team = "${var.team_count}"
     }
 }

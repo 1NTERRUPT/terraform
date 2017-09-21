@@ -45,7 +45,7 @@ resource "aws_security_group" "tools" {
     }
 }
 
-resource "aws_instance" "pub-fileserver" {
+resource "aws_instance" "pubfile01" {
     ami = "${var.ami_id}"
     instance_type = "t2.micro"
     count = "${var.team_count}"
@@ -55,7 +55,7 @@ resource "aws_instance" "pub-fileserver" {
     user_data = "${var.init_script}"
 
     tags {
-        Name = "pub-fileserver"
+        Name = "pubfile01"
         team = "${count.index}"
     }
 }

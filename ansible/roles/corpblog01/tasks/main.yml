@@ -1,0 +1,61 @@
+---
+- name: Set the hostname
+  hostname:
+    name: corpblog01
+  become: yes
+
+- copy:
+    src: /tmp/scenario_support/blogserver/
+    dest: /srv/blogserver/
+    owner: ubuntu
+    group: ubuntu
+
+- name: Install Packages
+  apt: name={{ item }} update_cache=yes state=latest
+  with_items:
+    - build-essential
+    - npm
+    - nodejs-legacy
+    - git
+    - mcrypt
+    - nginx
+    - curl
+
+- name: Install pm2
+  npm: name=pm2 global=yes production=yes
+
+- name: Install Hazel wiki
+  npm:
+    path: /srv/blogserver
+  register: npm_finished
+
+
+- name: Stop APP
+  sudo_user: ubuntu
+  command: pm2 stop server.js --name app
+  args:
+    chdir: /srv/blogserver/
+  ignore_errors: yes
+  when: npm_finished.changed
+  register: app_stopped
+
+- name: Start APP
+  sudo_user: ubuntu
+  command: pm2 start server.js --name app chdir=/srv/blogserver/
+  ignore_errors: yes
+  when: app_stopped.changed
+
+- name: disable default nginx site
+  file: 
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  become: yes
+
+- template:
+    src: templates/nginx.j2
+    dest: /etc/nginx/sites-enabled/corpblog01
+
+- service:
+    name: nginx
+    state: restarted
+

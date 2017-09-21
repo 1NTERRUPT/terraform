@@ -213,25 +213,25 @@ resource "aws_route_table_association" "hmi" {
 
 output "vpc_ids" {
   value = {
-    "public" = "${aws_vpc.pub.*.id}"
-    "corporate" = "${aws_vpc.corp.*.id}"
-    "ops" = "${aws_vpc.hmi.*.id}"
+    "public" = ["${aws_vpc.pub.*.id}"]
+    "corporate" = ["${aws_vpc.corp.*.id}"]
+    "ops" = ["${aws_vpc.hmi.*.id}"]
   }
 }
 
 output "subnet_ids" {
   value = {
-    "public" = "${aws_subnet.pub.*.id}"
-    "corporate" = "${aws_subnet.corp.*.id}"
-    "ops" = "${aws_subnet.hmi.*.id}"
+    "public" = ["${aws_subnet.pub.*.id}"]
+    "corporate" = ["${aws_subnet.corp.*.id}"]
+    "ops" = ["${aws_subnet.hmi.*.id}"]
   }
 }
 
 output "route_tables" {
   value = {
-    "public" = "${aws_route_table.pub.*.id}"
-    "corporate" = "${aws_route_table.corp.*.id}"
-    "ops" = "${aws_route_table.hmi.*.id}"
+    "public" = ["${aws_route_table.pub.*.id}"]
+    "corporate" = ["${aws_route_table.corp.*.id}"]
+    "ops" = ["${aws_route_table.hmi.*.id}"]
   }
 }
 

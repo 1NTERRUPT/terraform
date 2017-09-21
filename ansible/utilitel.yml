@@ -5,10 +5,15 @@
   roles: 
     - backstage
 
-- hosts: tag_Name_fileserver
+- hosts: tag_Name_corpblog01
+  become: true
+  roles:
+    - corpblog01
+
+- hosts: tag_Name_corpfile01
   become: true
   roles: 
-    - corp-file01
+    - corpfile01
 
 - hosts: tag_Name_wikiserver
   become: true
@@ -20,6 +25,11 @@
   roles:
     - tools
     - { role: fqdn, fqdn: "tools.utilitel.com", hostname: "tools" }
+
+- hosts: tag_Name_pubfile01
+  become: true
+  roles:
+    - pubfile01
 
 - hosts: tag_Name_pumpserver
   become: true

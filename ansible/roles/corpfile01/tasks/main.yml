@@ -1,0 +1,59 @@
+---
+- name: Set the hostname
+  hostname:
+    name: corpfile01
+  become: yes
+
+- user: 
+    name: harrydavis
+    password: $1$1NTERRUP$oxYxcSiGYOn26ml0cXlkE/
+
+- name: Install Harry Davis home directory
+  file:
+    path: "/home/harrydavis/"
+    state: directory
+    owner: harrydavis
+    group: harrydavis
+    mode: 0755
+
+- copy:
+    src: /tmp/scenario_support/corpfile01/
+    dest: /srv/samba/
+
+- name: setup samba
+  include_role:
+    name: samba
+  vars:
+    samba_netbios_name: corpfile01
+    samba_server_string: 'Welcome to the Utilitel file server'
+    samba_workgroup: Utilitel
+
+    samba_load_homes: true
+    samba_load_printers: false
+    samba_create_varwww_symlinks: true
+
+    samba_log: /var/log/samba.log
+    samba_log_size: 60000
+
+    samba_map_to_guest: Never
+
+    samba_shares_root: /srv/samba
+    samba_shares:
+      - name: public
+        comment: "public fileshare"
+        public: yes
+        guest_ok: yes
+        read_only: yes
+ 
+      - name: private
+        comment: "private fileshare"
+        public: yes
+        guest_ok: no
+        read_only: yes
+
+      - name: ops
+        comment: "Operations files"
+        public: yes
+        guest_ok: no
+        read_only: yes
+

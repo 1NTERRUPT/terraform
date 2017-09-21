@@ -5,7 +5,7 @@
   become: yes
 
 - name: Setup ssh credentials
-  s3:
+  aws_s3:
     bucket: 1nterrupt-util
     object: keys/utilitel-tools.pem
     dest: /home/ubuntu/.ssh/id_rsa

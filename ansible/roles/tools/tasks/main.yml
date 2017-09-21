@@ -11,6 +11,7 @@
     - sshfs
     - gedit
     - firefox
+    - evince
 
 - name: Make sure we have a 'wheel' group
   group:
@@ -39,22 +40,6 @@
 - service:
     name: xrdp
     state: restarted
-
-- apt_key:
-    url: "https://dl-ssl.google.com/linux/linux_signing_key.pub"
-    state: present
-
-- apt_repository:
-    repo: deb http://dl.google.com/linux/chrome/deb/ stable main
-    state: present
-    filename: 'google-chrome'
-
-- name: install chrome
-  apt:
-    name: google-chrome-stable
-    state: latest
-    update_cache: yes
-    allow_unauthenticated: yes
 
 - name: Install 1NTERRUPT directory
   file:
