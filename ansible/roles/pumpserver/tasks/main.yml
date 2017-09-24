@@ -1,9 +1,4 @@
 ---
-- name: Set the hostname
-  hostname:
-    name: ops-pumpshmi01
-  become: yes
-
 - git:
     repo: https://github.com/1NTERRUPT/water-processing
     dest: /srv/pumpserver
@@ -22,10 +17,28 @@
     - mcrypt
     - nginx
     - curl
-    - ruby-full
-    - ruby-bundler
+    - ruby2.4
+    - ruby2.4-dev
+    - ruby-switch
     - sqlite3 
     - libsqlite3-dev
+
+- name: Set Ruby 2.4 as default
+  command: ruby-switch --set ruby2.4
+  become: yes
+
+- apt: name=ruby-bundler update_cache=yes state=latest
+  become: yes
+
+- name: Install Bundler
+  gem: name=bundler state=latest
+  user_install: no
+  executable: yes
+  become: yes
+
+- name: Really install bundler
+  command: gem install bundler
+  become: yes
 
 - name: Install pumpserver
   bundler:

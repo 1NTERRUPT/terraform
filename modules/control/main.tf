@@ -25,7 +25,7 @@ data "aws_ami" "ubuntu" {
     most_recent = true
     filter {
         name = "name"
-        values = ["ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server-*"]
+        values = ["ubuntu/images/hvm-ssd/ubuntu-trusty-14.04-amd64-server-*"]
     }
     filter {
         name = "virtualization-type"
@@ -292,7 +292,8 @@ resource "aws_instance" "backstage" {
         "while [ ! -f /tmp/signal ]; do sleep 2; done",
         "chmod u+x /home/ubuntu/ansible/ec2.py" ,
         "sudo pip install --upgrade pip",
-        "sudo pip install boto"
+        "sudo pip install boto",
+        "sudo pip install boto3"
       ]
 
       connection {

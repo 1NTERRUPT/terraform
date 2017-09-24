@@ -40,7 +40,7 @@ data "aws_ami" "ubuntu" {
     most_recent = true
     filter {
         name = "name"
-        values = ["ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server-*"]
+        values = ["ubuntu/images/hvm-ssd/ubuntu-trusty-14.04-amd64-server-*"]
     }
     filter {
         name = "virtualization-type"
@@ -57,6 +57,7 @@ module "public" {
   subnet_ids = "${module.network.subnet_ids[var.public]}"
   internal_cidr_blocks = ["${cidrsubnet(var.cidrs[var.public], 8 ,1)}","${cidrsubnet(var.cidrs[var.corporate], 8 ,1)}","${cidrsubnet(var.cidrs[var.ops], 8 ,1)}","${cidrsubnet(var.cidrs[var.control], 8 ,1)}"]
   init_script = "${data.template_file.script.rendered}"
+  zone_ids  = "${module.network.utilitel_zones}"
 }
 
 resource "aws_security_group" "all_corp" {

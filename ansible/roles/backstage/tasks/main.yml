@@ -7,7 +7,7 @@
 - name: Setup ssh credentials
   s3:
     bucket: 1nterrupt-util
-    object: /keys/utilitel-tools.pem
+    object: keys/utilitel-tools.pem
     dest: /home/ubuntu/.ssh/id_rsa
     mode: get
 
@@ -21,7 +21,7 @@
   file: path=/tmp/scenario_support/corp-file01 state=directory owner=ubuntu group=ubuntu 
 
 - name: Download scenario support files
-  command: "aws s3 cp --recursive s3://1nterrupt-scenario-support /tmp/scenario_support/"
+  command: "aws s3 cp --region=us-east-1 --recursive s3://1nterrupt-scenario-support /tmp/scenario_support/"
 
 - name: Samba client
   apt:

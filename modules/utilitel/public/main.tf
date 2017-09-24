@@ -4,6 +4,7 @@ variable "internal_cidr_blocks" { type = "list" }
 variable "team_count" {}
 variable "ami_id" {}
 variable "init_script" {}
+variable "zone_ids" { type = "list" }
 
 data "aws_route53_zone" "events" {
   name = "events.1nterrupt.com"
@@ -59,6 +60,15 @@ resource "aws_instance" "pub-fileserver" {
     }
 }
 
+resource "aws_route53_record" "pub-fileserver" {
+  count = "${var.team_count}"
+  zone_id = "${element(var.zone_ids,count.index)}"
+  name    = "pub-fileserver.utilitel.com"
+  type    = "A"
+  ttl     = "10"
+  records = ["${element(aws_instance.pub-fileserver.*.private_ip, count.index)}"]
+}
+
 resource "aws_instance" "tools" {
     ami = "${var.ami_id}"
     instance_type = "t2.medium"
@@ -72,6 +82,15 @@ resource "aws_instance" "tools" {
         Name = "tools"
         team = "${count.index}"
     }
+}
+
+resource "aws_route53_record" "tools" {
+  count = "${var.team_count}"
+  zone_id = "${element(var.zone_ids,count.index)}"
+  name    = "tools${count.index}.utilitel.com"
+  type    = "A"
+  ttl     = "10"
+  records = ["${element(aws_instance.tools.*.private_ip, count.index)}"]
 }
 
 resource "aws_route53_record" "tools_ext" {

@@ -11,6 +11,7 @@ data "aws_caller_identity" "current" { }
 resource "aws_vpc" "pub" {
     cidr_block = "${var.cidrs[var.public]}"
     enable_dns_hostnames = true
+    enable_dns_support   = true
     count = "${var.team_count}"
 
     tags {
@@ -22,6 +23,7 @@ resource "aws_vpc" "pub" {
 resource "aws_vpc" "corp" {
     cidr_block = "${var.cidrs[var.corporate]}"
     enable_dns_hostnames = true
+    enable_dns_support   = true
     count = "${var.team_count}"
 
     tags {
@@ -33,12 +35,31 @@ resource "aws_vpc" "corp" {
 resource "aws_vpc" "hmi" {
     cidr_block = "${var.cidrs[var.ops]}"
     enable_dns_hostnames = true
+    enable_dns_support   = true
     count = "${var.team_count}"
 
     tags {
         Name = "utilitel_hmi_vpc"
         team = "${count.index}"
     }
+}
+
+resource "aws_route53_zone" "utilitel" {
+  name   = "utilitel.com"
+  count = "${var.team_count}"
+  vpc_id = "${element(aws_vpc.pub.*.id,count.index)}"
+}
+
+resource "aws_route53_zone_association" "corporate" {
+  zone_id = "${element(aws_route53_zone.utilitel.*.zone_id,count.index)}"
+  count = "${var.team_count}"
+  vpc_id  = "${element(aws_vpc.corp.*.id,count.index)}"
+}
+
+resource "aws_route53_zone_association" "hmi" {
+  zone_id = "${element(aws_route53_zone.utilitel.*.zone_id,count.index)}"
+  count = "${var.team_count}"
+  vpc_id  = "${element(aws_vpc.hmi.*.id,count.index)}"
 }
 
 resource "aws_vpc_peering_connection" "pub2corp" {
@@ -213,3 +234,5 @@ output "route_tables" {
     "ops" = "${aws_route_table.hmi.*.id}"
   }
 }
+
+output "utilitel_zones" { value = "${aws_route53_zone.utilitel.*.zone_id}" }

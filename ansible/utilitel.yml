@@ -19,8 +19,10 @@
   become: true
   roles:
     - tools
+    - { role: fqdn, fqdn: "tools.utilitel.com", hostname: "tools" }
 
 - hosts: tag_Name_pumpserver
   become: true
   roles:
     - pumpserver
+    - { role: fqdn, fqdn: "ops-pumpshmi01.utilitel.com", hostname: "ops-pumpshmi01" }

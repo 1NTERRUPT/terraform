@@ -1,9 +1,4 @@
 ---
-- name: Set the hostname
-  hostname:
-    name: tools
-  become: yes
-
 - name: Install Packages
   apt: name={{ item }} update_cache=yes state=latest
   with_items:
