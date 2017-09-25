@@ -60,13 +60,13 @@ resource "aws_instance" "pubfile01" {
     }
 }
 
-resource "aws_route53_record" "pub-fileserver" {
+resource "aws_route53_record" "pubfile01" {
   count = "${var.team_count}"
   zone_id = "${element(var.zone_ids,count.index)}"
-  name    = "pub-fileserver.utilitel.com"
+  name    = "pubfile01.utilitel.com"
   type    = "A"
   ttl     = "10"
-  records = ["${element(aws_instance.pub-fileserver.*.private_ip, count.index)}"]
+  records = ["${element(aws_instance.pubfile01.*.private_ip, count.index)}"]
 }
 
 resource "aws_instance" "tools" {
