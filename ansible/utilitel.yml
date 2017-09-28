@@ -9,17 +9,21 @@
   become: true
   roles:
     - corpblog01
+    - { role: fqdn, fqdn: "corpblog01.utilitel.com", hostname: "corpblog01" }
+
 
 - hosts: tag_Name_corpfile01
   become: true
   roles: 
     - corpfile01
+    - { role: fqdn, fqdn: "corpfile01.utilitel.com", hostname: "corpfile01" }
 
 - hosts: tag_Name_wikiserver
   become: true
   roles:
     - wikiserver
-    
+    - { role: fqdn, fqdn: "wikiserver.utilitel.com", hostname: "wikiserver" }
+
 - hosts: tag_Name_tools
   become: true
   roles:
@@ -30,6 +34,7 @@
   become: true
   roles:
     - pubfile01
+    - { role: fqdn, fqdn: "pubfile01.utilitel.com", hostname: "pubfile01" }
 
 - hosts: tag_Name_pumpserver
   become: true

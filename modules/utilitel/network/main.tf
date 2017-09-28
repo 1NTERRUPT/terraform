@@ -235,4 +235,4 @@ output "route_tables" {
   }
 }
 
-output "utilitel_zones" { value = "${aws_route53_zone.utilitel.*.zone_id}" }
+output "utilitel_zones" { value = ["${aws_route53_zone.utilitel.*.zone_id}"] }

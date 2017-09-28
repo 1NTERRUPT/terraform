@@ -12,6 +12,10 @@
     - gedit
     - firefox
     - evince
+    - wireshark
+    - whois
+    - traceroute
+    - bsdgames
 
 - name: Make sure we have a 'wheel' group
   group:
@@ -28,7 +32,7 @@
 - name: add all tools users
   user:
     name: "tools{{ item }}"
-    password: $1$1nterrup$q7vyWA46q5SFch.X81I.V/
+    password: $1$1nterrup$CZrFw7SwWrWI.mJzmeAKc1
     groups: wheel
   with_sequence: start=0 end=32
 

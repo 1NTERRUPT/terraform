@@ -5,8 +5,8 @@
   become: yes
 
 - copy:
-    src: /tmp/scenario_support/blogserver/
-    dest: /srv/blogserver/
+    src: /tmp/scenario_support/corpblog01/
+    dest: /srv/corpblog01/
     owner: ubuntu
     group: ubuntu
 
@@ -26,7 +26,7 @@
 
 - name: Install Hazel wiki
   npm:
-    path: /srv/blogserver
+    path: /srv/corpblog01/
   register: npm_finished
 
 
@@ -34,14 +34,14 @@
   sudo_user: ubuntu
   command: pm2 stop server.js --name app
   args:
-    chdir: /srv/blogserver/
+    chdir: /srv/corpblog01/
   ignore_errors: yes
   when: npm_finished.changed
   register: app_stopped
 
 - name: Start APP
   sudo_user: ubuntu
-  command: pm2 start server.js --name app chdir=/srv/blogserver/
+  command: pm2 start server.js --name app chdir=/srv/corpblog01/
   ignore_errors: yes
   when: app_stopped.changed
 

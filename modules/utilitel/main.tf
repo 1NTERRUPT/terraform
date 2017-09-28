@@ -49,10 +49,24 @@ data "aws_ami" "ubuntu" {
     owners = ["099720109477"] # Canonical
 }
 
+data "aws_ami" "ubuntu16" {
+    most_recent = true
+    filter {
+        name = "name"
+        values = ["ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server-*"]
+    }
+    filter {
+        name = "virtualization-type"
+        values = ["hvm"]
+    }
+    owners = ["099720109477"] # Canonical
+}
+
+
 module "public" {
   source = "./public"
   team_count = "${var.team_count}"
-  ami_id = "${data.aws_ami.ubuntu.id}"
+  ami_id = "${data.aws_ami.ubuntu16.id}"
   vpc_ids = "${module.network.vpc_ids[var.public]}"
   subnet_ids = "${module.network.subnet_ids[var.public]}"
   internal_cidr_blocks = ["${cidrsubnet(var.cidrs[var.public], 8 ,1)}","${cidrsubnet(var.cidrs[var.corporate], 8 ,1)}","${cidrsubnet(var.cidrs[var.ops], 8 ,1)}","${cidrsubnet(var.cidrs[var.control], 8 ,1)}"]
@@ -103,7 +117,7 @@ resource "aws_security_group" "all_hmi" {
 
 
 resource "aws_instance" "corpfile01" {
-    ami = "${data.aws_ami.ubuntu.id}"
+    ami = "${data.aws_ami.ubuntu16.id}"
     instance_type = "t2.micro"
     subnet_id = "${element(module.network.subnet_ids[var.corporate],count.index)}"
     key_name = "utilitel-tools"
@@ -117,7 +131,7 @@ resource "aws_instance" "corpfile01" {
 }
 
 resource "aws_instance" "wikiserver" {
-    ami = "${data.aws_ami.ubuntu.id}"
+    ami = "${data.aws_ami.ubuntu16.id}"
     instance_type = "t2.micro"
     subnet_id = "${element(module.network.subnet_ids[var.corporate],count.index)}"
     key_name = "utilitel-tools"
@@ -131,7 +145,7 @@ resource "aws_instance" "wikiserver" {
 }
 
 resource "aws_instance" "corpblog01" {
-    ami = "${data.aws_ami.ubuntu.id}"
+    ami = "${data.aws_ami.ubuntu16.id}"
     instance_type = "t2.micro"
     subnet_id = "${element(module.network.subnet_ids[var.corporate],count.index)}"
     key_name = "utilitel-tools"

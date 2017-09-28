@@ -21,11 +21,11 @@ data "aws_route53_zone" "events" {
   name = "events.1nterrupt.com"
 }
 
-data "aws_ami" "ubuntu" {
+data "aws_ami" "ubuntu16" {
     most_recent = true
     filter {
         name = "name"
-        values = ["ubuntu/images/hvm-ssd/ubuntu-trusty-14.04-amd64-server-*"]
+        values = ["ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server-*"]
     }
     filter {
         name = "virtualization-type"
@@ -258,7 +258,7 @@ data "template_file" "script" {
 }
 
 resource "aws_instance" "backstage" {
-    ami = "${data.aws_ami.ubuntu.id}"
+    ami = "${data.aws_ami.ubuntu16.id}"
     instance_type = "t2.micro"
     subnet_id = "${aws_subnet.control.id}"
     key_name = "utilitel-tools"
