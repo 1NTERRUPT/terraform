@@ -6,7 +6,11 @@
 
 - user: 
     name: harrydavis
-    password: $1$1NTERRUP$oxYxcSiGYOn26ml0cXlkE/
+    password: $1$1nterrup$DMzrGjqazmuwmApH1wSIl/
+
+- user:
+    name: admin
+    password: $1$1nterrup$C/d4YW3G5jTCvesbRnLeo/
 
 - name: Install Harry Davis home directory
   file:
@@ -17,7 +21,11 @@
     mode: 0755
 
 - copy:
-    src: /tmp/scenario_support/corpfile01/
+    src: /tmp/scenario_support/corpfile01/home/harrydavis/
+    dest: /home/harrydavis/
+
+- copy:
+    src: /tmp/scenario_support/corpfile01/shares/
     dest: /srv/samba/
 
 - name: setup samba
@@ -50,10 +58,14 @@
         public: yes
         guest_ok: no
         read_only: yes
-
-      - name: ops
-        comment: "Operations files"
-        public: yes
-        guest_ok: no
-        read_only: yes
-
+        valid_users: admin
+    samba_users: 
+      -
+        name: admin
+        password: !vault |
+                  $ANSIBLE_VAULT;1.1;AES256
+                  30363762623230656436376432653030376565666333353036663334646566623966643361326466
+                  3633393964626136303034363863623630613635306238300a326534363437323663336435363262
+                  32646635363631626238303966396338323965653564666636306433643930373062373031383834
+                  6333343364646635300a343766326233633866626637383939666630666561616137623665306561
+                  3331

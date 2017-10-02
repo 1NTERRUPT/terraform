@@ -172,6 +172,21 @@ resource "aws_instance" "pumpserver" {
     }
 }
 
+resource "aws_instance" "opsfile01" {
+    ami = "${data.aws_ami.ubuntu16.id}"
+    instance_type = "t2.micro"
+    subnet_id = "${element(module.network.subnet_ids[var.ops],count.index)}"
+    key_name = "utilitel-tools"
+    security_groups = ["${aws_security_group.all_hmi.id}"]
+    user_data = "${data.template_file.script.rendered}"
+
+    tags {
+        Name = "opsfile01"
+        team = "${var.team_count}"
+    }
+}
+
+
 output "vpc_ids" { value = "${module.network.vpc_ids}" }
 
 output "internal_cidr_blocks" { value = ["${cidrsubnet(var.cidrs[var.public], 8 ,1)}","${cidrsubnet(var.cidrs[var.corporate], 8 ,1)}","${cidrsubnet(var.cidrs[var.ops], 8 ,1)}","${cidrsubnet(var.cidrs[var.control], 8 ,1)}"] }

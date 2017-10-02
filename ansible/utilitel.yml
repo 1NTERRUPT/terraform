@@ -36,6 +36,12 @@
     - pubfile01
     - { role: fqdn, fqdn: "pubfile01.utilitel.com", hostname: "pubfile01" }
 
+- hosts: tag_Name_opsfile01
+  become: true
+  roles:
+    - opsfile01
+    - { role: fqdn, fqdn: "opsfile01.utilitel.com", hostname: "opsfile01" }
+
 - hosts: tag_Name_pumpserver
   become: true
   roles:

@@ -15,7 +15,8 @@
     - wireshark
     - whois
     - traceroute
-    - bsdgames
+    - exiftool
+    - xfce4-goodies
 
 - name: Make sure we have a 'wheel' group
   group:
