@@ -17,26 +17,14 @@
     - traceroute
     - exiftool
     - xfce4-goodies
-
-- name: Make sure we have a 'wheel' group
-  group:
-    name: wheel
-    state: present
-
-- name: Allow 'wheel' group to have passwordless sudo
-  lineinfile:
-    dest: /etc/sudoers
-    state: present
-    regexp: '^%wheel'
-    line: '%wheel ALL=(ALL) NOPASSWD: ALL'
+    - bsdgames
+    - htop
 
 - name: add all tools users
   user:
     name: "tools{{ item }}"
     password: $1$1nterrup$CZrFw7SwWrWI.mJzmeAKc1
-    groups: wheel
   with_sequence: start=0 end=32
-
 
 - name: setup xsession for tools user
   command: "echo xfce4-session >~tools{{ item }}/.xsession && chown tools{{ item }}:tools{{ item }} ~tools{{ item }}/.xsession"
