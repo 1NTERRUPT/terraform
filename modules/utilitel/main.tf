@@ -69,7 +69,7 @@ module "public" {
   ami_id = "${data.aws_ami.ubuntu16.id}"
   vpc_ids = "${module.network.vpc_ids[var.public]}"
   subnet_ids = "${module.network.subnet_ids[var.public]}"
-  internal_cidr_blocks = ["${cidrsubnet(var.cidrs[var.public], 8 ,1)}","${cidrsubnet(var.cidrs[var.corporate], 8 ,1)}","${cidrsubnet(var.cidrs[var.ops], 8 ,1)}","${cidrsubnet(var.cidrs[var.control], 8 ,1)}"]
+  internal_cidr_blocks = ["${var.cidrs[var.public]}","${var.cidrs[var.corporate]}","${var.cidrs[var.ops]}","${var.cidrs[var.control]}"]
   init_script = "${data.template_file.script.rendered}"
   zone_ids  = "${module.network.utilitel_zones}"
 }
@@ -77,13 +77,14 @@ module "public" {
 resource "aws_security_group" "all_corp" {
     name = "all_corp"
     description = "Allow all inbound ssh traffic"
+    count = "${var.team_count}"
     vpc_id = "${element(module.network.vpc_ids[var.corporate],count.index)}"
 
     ingress {
         from_port = 0
         to_port = 0
         protocol = "-1"
-        cidr_blocks = ["${cidrsubnet(var.cidrs[var.public], 8 ,1)}","${cidrsubnet(var.cidrs[var.corporate], 8 ,1)}","${cidrsubnet(var.cidrs[var.ops], 8 ,1)}","${cidrsubnet(var.cidrs[var.control], 8 ,1)}"]
+        cidr_blocks = ["${cidrsubnet(var.cidrs[var.public], 8, count.index)}","${cidrsubnet(var.cidrs[var.corporate], 8 , count.index)}","${cidrsubnet(var.cidrs[var.ops], 8 ,count.index)}","${var.cidrs[var.control]}"]
     }
 
     egress {
@@ -97,13 +98,14 @@ resource "aws_security_group" "all_corp" {
 resource "aws_security_group" "all_hmi" {
     name = "all_hmi"
     description = "Allow all inbound ssh traffic"
+    count = "${var.team_count}"
     vpc_id = "${element(module.network.vpc_ids[var.ops],count.index)}"
 
     ingress {
         from_port = 0
         to_port = 0
         protocol = "-1"
-        cidr_blocks = ["${cidrsubnet(var.cidrs[var.public], 8 ,1)}","${cidrsubnet(var.cidrs[var.corporate], 8 ,1)}","${cidrsubnet(var.cidrs[var.ops], 8 ,1)}","${cidrsubnet(var.cidrs[var.control], 8 ,1)}"]
+        cidr_blocks = ["${cidrsubnet(var.cidrs[var.public], 8, count.index)}","${cidrsubnet(var.cidrs[var.corporate], 8 , count.index)}","${cidrsubnet(var.cidrs[var.ops], 8 ,count.index)}","${var.cidrs[var.control]}"]
     }
 
     egress {
@@ -121,26 +123,28 @@ resource "aws_instance" "corpfile01" {
     instance_type = "t2.micro"
     subnet_id = "${element(module.network.subnet_ids[var.corporate],count.index)}"
     key_name = "utilitel-tools"
-    security_groups = ["${aws_security_group.all_corp.id}"]
+    security_groups = ["${element(aws_security_group.all_corp.*.id, count.index)}"]
+    count = "${var.team_count}"
     user_data = "${data.template_file.script.rendered}"
 
     tags {
         Name = "corpfile01"
-        team = "${var.team_count}"
+        team = "${count.index}"
     }
 }
 
 resource "aws_instance" "wikiserver" {
     ami = "${data.aws_ami.ubuntu16.id}"
     instance_type = "t2.micro"
+    count = "${var.team_count}"
     subnet_id = "${element(module.network.subnet_ids[var.corporate],count.index)}"
     key_name = "utilitel-tools"
-    security_groups = ["${aws_security_group.all_corp.id}"]
+    security_groups = ["${element(aws_security_group.all_corp.*.id, count.index)}"]
     user_data = "${data.template_file.script.rendered}"
 
     tags {
         Name = "wikiserver"
-        team = "${var.team_count}"
+        team = "${count.index}"
     }
 }
 
@@ -149,12 +153,13 @@ resource "aws_instance" "corpblog01" {
     instance_type = "t2.micro"
     subnet_id = "${element(module.network.subnet_ids[var.corporate],count.index)}"
     key_name = "utilitel-tools"
-    security_groups = ["${aws_security_group.all_corp.id}"]
+    count = "${var.team_count}"
+    security_groups = ["${element(aws_security_group.all_corp.*.id, count.index)}"]
     user_data = "${data.template_file.script.rendered}"
 
     tags {
         Name = "corpblog01"
-        team = "${var.team_count}"
+        team = "${count.index}"
     }
 }
 
@@ -163,12 +168,13 @@ resource "aws_instance" "pumpserver" {
     instance_type = "t2.micro"
     subnet_id = "${element(module.network.subnet_ids[var.ops],count.index)}"
     key_name = "utilitel-tools"
-    security_groups = ["${aws_security_group.all_hmi.id}"]
+    security_groups = ["${element(aws_security_group.all_hmi.*.id, count.index)}"]
+    count = "${var.team_count}"
     user_data = "${data.template_file.script.rendered}"
 
     tags {
         Name = "pumpserver"
-        team = "${var.team_count}"
+        team = "${count.index}"
     }
 }
 
@@ -177,12 +183,13 @@ resource "aws_instance" "opsfile01" {
     instance_type = "t2.micro"
     subnet_id = "${element(module.network.subnet_ids[var.ops],count.index)}"
     key_name = "utilitel-tools"
-    security_groups = ["${aws_security_group.all_hmi.id}"]
+    security_groups = ["${element(aws_security_group.all_hmi.*.id, count.index)}"]
+    count = "${var.team_count}"
     user_data = "${data.template_file.script.rendered}"
 
     tags {
         Name = "opsfile01"
-        team = "${var.team_count}"
+        team = "${count.index}"
     }
 }
 

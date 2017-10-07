@@ -9,41 +9,41 @@
   become: true
   roles:
     - corpblog01
-    - { role: fqdn, fqdn: "corpblog01.utilitel.com", hostname: "corpblog01" }
+    - { role: fqdn, fqdn: "corpblog01.utilitel.test", hostname: "corpblog01" }
 
 
 - hosts: tag_Name_corpfile01
   become: true
   roles: 
     - corpfile01
-    - { role: fqdn, fqdn: "corpfile01.utilitel.com", hostname: "corpfile01" }
+    - { role: fqdn, fqdn: "corpfile01.utilitel.test", hostname: "corpfile01" }
 
 - hosts: tag_Name_wikiserver
   become: true
   roles:
     - wikiserver
-    - { role: fqdn, fqdn: "wikiserver.utilitel.com", hostname: "wikiserver" }
+    - { role: fqdn, fqdn: "wikiserver.utilitel.test", hostname: "wikiserver" }
 
 - hosts: tag_Name_tools
   become: true
   roles:
     - tools
-    - { role: fqdn, fqdn: "tools.utilitel.com", hostname: "tools" }
+    - { role: fqdn, fqdn: "tools.utilitel.test", hostname: "tools" }
 
 - hosts: tag_Name_pubfile01
   become: true
   roles:
     - pubfile01
-    - { role: fqdn, fqdn: "pubfile01.utilitel.com", hostname: "pubfile01" }
+    - { role: fqdn, fqdn: "pubfile01.utilitel.test", hostname: "pubfile01" }
 
 - hosts: tag_Name_opsfile01
   become: true
   roles:
     - opsfile01
-    - { role: fqdn, fqdn: "opsfile01.utilitel.com", hostname: "opsfile01" }
+    - { role: fqdn, fqdn: "opsfile01.utilitel.test", hostname: "opsfile01" }
 
 - hosts: tag_Name_pumpserver
   become: true
   roles:
     - pumpserver
-    - { role: fqdn, fqdn: "ops-pumpshmi01.utilitel.com", hostname: "ops-pumpshmi01" }
+    - { role: fqdn, fqdn: "ops-pumpshmi01.utilitel.test", hostname: "ops-pumpshmi01" }

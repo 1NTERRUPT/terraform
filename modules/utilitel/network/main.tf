@@ -9,7 +9,7 @@ variable "ops" { default = "ops" }
 data "aws_caller_identity" "current" { }
 
 resource "aws_vpc" "pub" {
-    cidr_block = "${var.cidrs[var.public]}"
+    cidr_block = "${cidrsubnet(var.cidrs[var.public], 8, count.index)}"
     enable_dns_hostnames = true
     enable_dns_support   = true
     count = "${var.team_count}"
@@ -21,7 +21,7 @@ resource "aws_vpc" "pub" {
 }
 
 resource "aws_vpc" "corp" {
-    cidr_block = "${var.cidrs[var.corporate]}"
+    cidr_block = "${cidrsubnet(var.cidrs[var.corporate], 8, count.index)}"
     enable_dns_hostnames = true
     enable_dns_support   = true
     count = "${var.team_count}"
@@ -33,7 +33,7 @@ resource "aws_vpc" "corp" {
 }
 
 resource "aws_vpc" "hmi" {
-    cidr_block = "${var.cidrs[var.ops]}"
+    cidr_block = "${cidrsubnet(var.cidrs[var.ops], 8, count.index)}"
     enable_dns_hostnames = true
     enable_dns_support   = true
     count = "${var.team_count}"
@@ -45,7 +45,7 @@ resource "aws_vpc" "hmi" {
 }
 
 resource "aws_route53_zone" "utilitel" {
-  name   = "utilitel.com"
+  name   = "utilitel.test"
   count = "${var.team_count}"
   vpc_id = "${element(aws_vpc.pub.*.id,count.index)}"
 }
@@ -96,7 +96,7 @@ resource "aws_internet_gateway" "gw_hmi" {
 resource "aws_subnet" "pub" {
     count = "${var.team_count}"
     vpc_id = "${element(aws_vpc.pub.*.id, count.index)}"
-    cidr_block = "${cidrsubnet(var.cidrs[var.public], 8 ,1)}"
+    cidr_block = "${cidrsubnet(var.cidrs[var.public], 8, count.index)}"
     map_public_ip_on_launch = true
     depends_on = ["aws_internet_gateway.gw_pub"]
     tags {
@@ -108,7 +108,7 @@ resource "aws_subnet" "pub" {
 resource "aws_subnet" "corp" {
     count = "${var.team_count}"
     vpc_id = "${element(aws_vpc.corp.*.id, count.index)}"
-    cidr_block = "${cidrsubnet(var.cidrs[var.corporate], 8 ,1)}"
+    cidr_block = "${cidrsubnet(var.cidrs[var.corporate], 8, count.index)}"
     map_public_ip_on_launch = true
     depends_on = ["aws_internet_gateway.gw_corp"]
     tags {
@@ -120,7 +120,7 @@ resource "aws_subnet" "corp" {
 resource "aws_subnet" "hmi" {
     count = "${var.team_count}"
     vpc_id = "${element(aws_vpc.hmi.*.id, count.index)}"
-    cidr_block = "${cidrsubnet(var.cidrs[var.ops], 8 ,1)}"
+    cidr_block = "${cidrsubnet(var.cidrs[var.ops], 8, count.index)}"
     map_public_ip_on_launch = true
     depends_on = ["aws_internet_gateway.gw_hmi"]
     tags {
@@ -136,21 +136,21 @@ resource "aws_route_table" "pub" {
 
 resource "aws_route" "pub2hmi" {
     count = "${var.team_count}"
-    route_table_id = "${aws_route_table.pub.id}"
+    route_table_id = "${element(aws_route_table.pub.*.id, count.index)}"
     destination_cidr_block = "${var.cidrs[var.ops]}"
     vpc_peering_connection_id = "${element(aws_vpc_peering_connection.pub2hmi.*.id, count.index)}"
 }
 
 resource "aws_route" "pub2corp" {
     count = "${var.team_count}"
-    route_table_id = "${aws_route_table.pub.id}"
+    route_table_id = "${element(aws_route_table.pub.*.id, count.index)}"
     destination_cidr_block = "${var.cidrs[var.corporate]}"
     vpc_peering_connection_id = "${element(aws_vpc_peering_connection.pub2corp.*.id, count.index)}"
 }
 
 resource "aws_route" "pub2internet" {
     count = "${var.team_count}"
-    route_table_id = "${aws_route_table.pub.id}"
+    route_table_id = "${element(aws_route_table.pub.*.id, count.index)}"
     destination_cidr_block = "0.0.0.0/0"
     gateway_id = "${element(aws_internet_gateway.gw_pub.*.id, count.index)}"
 }
@@ -168,14 +168,14 @@ resource "aws_route_table" "corp" {
 
 resource "aws_route" "corp2pub" {
     count = "${var.team_count}"
-    route_table_id = "${aws_route_table.corp.id}"
+    route_table_id = "${element(aws_route_table.corp.*.id, count.index)}"
     destination_cidr_block = "${var.cidrs[var.public]}"
     vpc_peering_connection_id = "${element(aws_vpc_peering_connection.pub2corp.*.id, count.index)}"
 }
 
 resource "aws_route" "corp2internet" {
     count = "${var.team_count}"
-    route_table_id = "${aws_route_table.corp.id}"
+    route_table_id = "${element(aws_route_table.corp.*.id, count.index)}"
     destination_cidr_block = "0.0.0.0/0"
     gateway_id = "${element(aws_internet_gateway.gw_corp.*.id, count.index)}"
 }
@@ -193,14 +193,14 @@ resource "aws_route_table" "hmi" {
 
 resource "aws_route" "hmi2pub" {
     count = "${var.team_count}"
-    route_table_id = "${aws_route_table.hmi.id}"
+    route_table_id = "${element(aws_route_table.hmi.*.id, count.index)}"
     destination_cidr_block = "${var.cidrs[var.public]}"
     vpc_peering_connection_id = "${element(aws_vpc_peering_connection.pub2hmi.*.id, count.index)}"
 }
 
 resource "aws_route" "hmi2internet" {
     count = "${var.team_count}"
-    route_table_id = "${aws_route_table.hmi.id}"
+    route_table_id = "${element(aws_route_table.hmi.*.id, count.index)}"
     destination_cidr_block = "0.0.0.0/0"
     gateway_id = "${element(aws_internet_gateway.gw_hmi.*.id, count.index)}"
 }

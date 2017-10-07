@@ -91,20 +91,20 @@ resource "aws_route_table" "control" {
 resource "aws_route" "control2public" {
     count = "${var.team_count}"
     route_table_id = "${aws_route_table.control.id}"
-    destination_cidr_block = "${var.cidrs[var.public]}"
+    destination_cidr_block = "${cidrsubnet(var.cidrs[var.public], 8, count.index)}"
     vpc_peering_connection_id = "${element(aws_vpc_peering_connection.control2pub.*.id, count.index)}"
 }
 
 resource "aws_route" "control2corporate" {
     count = "${var.team_count}"
     route_table_id = "${aws_route_table.control.id}"
-    destination_cidr_block = "${var.cidrs[var.corporate]}"
+    destination_cidr_block = "${cidrsubnet(var.cidrs[var.corporate], 8, count.index)}"
     vpc_peering_connection_id = "${element(aws_vpc_peering_connection.control2corp.*.id, count.index)}"
 }
 resource "aws_route" "control2ops" {
     count = "${var.team_count}"
     route_table_id = "${aws_route_table.control.id}"
-    destination_cidr_block = "${var.cidrs[var.ops]}"
+    destination_cidr_block = "${cidrsubnet(var.cidrs[var.ops], 8, count.index)}"
     vpc_peering_connection_id = "${element(aws_vpc_peering_connection.control2ops.*.id, count.index)}"
 }
 

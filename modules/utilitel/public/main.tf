@@ -51,7 +51,7 @@ resource "aws_instance" "pubfile01" {
     count = "${var.team_count}"
     subnet_id = "${element(var.subnet_ids,count.index)}"
     key_name = "utilitel-tools"
-    security_groups = ["${aws_security_group.all_pub.id}"]
+    security_groups = ["${element(aws_security_group.all_pub.*.id, count.index)}"]
     user_data = "${var.init_script}"
 
     tags {
@@ -63,7 +63,7 @@ resource "aws_instance" "pubfile01" {
 resource "aws_route53_record" "pubfile01" {
   count = "${var.team_count}"
   zone_id = "${element(var.zone_ids,count.index)}"
-  name    = "pubfile01.utilitel.com"
+  name    = "pubfile01.utilitel.test"
   type    = "A"
   ttl     = "10"
   records = ["${element(aws_instance.pubfile01.*.private_ip, count.index)}"]
@@ -75,7 +75,7 @@ resource "aws_instance" "tools" {
     count = "${var.team_count}"
     subnet_id = "${element(var.subnet_ids,count.index)}"
     key_name = "utilitel-tools"
-    security_groups = ["${aws_security_group.all_pub.id}", "${aws_security_group.tools.id}"]
+    security_groups = ["${element(aws_security_group.all_pub.*.id, count.index)}", "${element(aws_security_group.tools.*.id, count.index)}"]
     user_data = "${var.init_script}"
 
     tags {
@@ -87,7 +87,7 @@ resource "aws_instance" "tools" {
 resource "aws_route53_record" "tools" {
   count = "${var.team_count}"
   zone_id = "${element(var.zone_ids,count.index)}"
-  name    = "tools${count.index}.utilitel.com"
+  name    = "tools${count.index}.utilitel.test"
   type    = "A"
   ttl     = "10"
   records = ["${element(aws_instance.tools.*.private_ip, count.index)}"]
