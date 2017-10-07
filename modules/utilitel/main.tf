@@ -116,8 +116,6 @@ resource "aws_security_group" "all_hmi" {
     }
 }
 
-
-
 resource "aws_instance" "corpfile01" {
     ami = "${data.aws_ami.ubuntu16.id}"
     instance_type = "t2.micro"
@@ -131,6 +129,15 @@ resource "aws_instance" "corpfile01" {
         Name = "corpfile01"
         team = "${count.index}"
     }
+}
+
+resource "aws_route53_record" "corpfile01" {
+  count = "${var.team_count}"
+  zone_id = "${element(module.network.utilitel_zones,count.index)}"
+  name    = "corpfile01.utilitel.test"
+  type    = "A"
+  ttl     = "10"
+  records = ["${element(aws_instance.corpfile01.*.private_ip, count.index)}"]
 }
 
 resource "aws_instance" "wikiserver" {
@@ -148,6 +155,15 @@ resource "aws_instance" "wikiserver" {
     }
 }
 
+resource "aws_route53_record" "wikiserver" {
+  count = "${var.team_count}"
+  zone_id = "${element(module.network.utilitel_zones,count.index)}"
+  name    = "wikiserver.utilitel.test"
+  type    = "A"
+  ttl     = "10"
+  records = ["${element(aws_instance.wikiserver.*.private_ip, count.index)}"]
+}
+
 resource "aws_instance" "corpblog01" {
     ami = "${data.aws_ami.ubuntu16.id}"
     instance_type = "t2.micro"
@@ -162,6 +178,16 @@ resource "aws_instance" "corpblog01" {
         team = "${count.index}"
     }
 }
+
+resource "aws_route53_record" "corpblog01" {
+  count = "${var.team_count}"
+  zone_id = "${element(module.network.utilitel_zones,count.index)}"
+  name    = "corpblog01.utilitel.test"
+  type    = "A"
+  ttl     = "10"
+  records = ["${element(aws_instance.corpblog01.*.private_ip, count.index)}"]
+}
+
 
 resource "aws_instance" "pumpserver" {
     ami = "${data.aws_ami.ubuntu.id}"
@@ -178,6 +204,16 @@ resource "aws_instance" "pumpserver" {
     }
 }
 
+resource "aws_route53_record" "pumpserver" {
+  count = "${var.team_count}"
+  zone_id = "${element(module.network.utilitel_zones,count.index)}"
+  name    = "pumpserver.utilitel.test"
+  type    = "A"
+  ttl     = "10"
+  records = ["${element(aws_instance.pumpserver.*.private_ip, count.index)}"]
+}
+
+
 resource "aws_instance" "opsfile01" {
     ami = "${data.aws_ami.ubuntu16.id}"
     instance_type = "t2.micro"
@@ -193,6 +229,14 @@ resource "aws_instance" "opsfile01" {
     }
 }
 
+resource "aws_route53_record" "opsfile01" {
+  count = "${var.team_count}"
+  zone_id = "${element(module.network.utilitel_zones,count.index)}"
+  name    = "opsfile01.utilitel.test"
+  type    = "A"
+  ttl     = "10"
+  records = ["${element(aws_instance.opsfile01.*.private_ip, count.index)}"]
+}
 
 output "vpc_ids" { value = "${module.network.vpc_ids}" }
 
