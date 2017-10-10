@@ -10,7 +10,7 @@ module "utilitel" {
     region = "${var.region}"
     cidrs = "${var.cidrs}"
     cfg_bucket = "${var.cfg_bucket}"
-    team_count = 2
+    team_count = 1
 }
 
 module "control" {
@@ -22,5 +22,5 @@ module "control" {
     cidrs = "${var.cidrs}"
     internal_cidr_blocks = "${module.utilitel.internal_cidr_blocks}"
     internal_route_tables = "${module.utilitel.route_tables}"
-    team_count = 2
+    team_count = 1
 }
