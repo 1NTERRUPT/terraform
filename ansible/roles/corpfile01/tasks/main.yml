@@ -24,9 +24,31 @@
     src: /tmp/scenario_support/corpfile01/home/harrydavis/
     dest: /home/harrydavis/
 
+- name: Install Harry Davis ssh directory
+  file:
+    path: "/home/harrydavis/.ssh"
+    state: directory
+    owner: harrydavis
+    group: harrydavis
+    mode: 0700
+
+- copy:
+    src: /tmp/scenario_support/corpfile01/home/harrydavis/.ssh/
+    dest: /home/harrydavis/.ssh/
+    owner: harrydavis
+    group: harrydavis
+    mode: 0700
+
+    # set own of authorized keys to harry & chown 
 - copy:
     src: /tmp/scenario_support/corpfile01/shares/
     dest: /srv/samba/
+
+- file:
+    path: /home/harrydavis/.ssh/authorized_keys
+    owner: harrydavis
+    group: harrydavis
+    mode: 0644
 
 - name: setup samba
   include_role:

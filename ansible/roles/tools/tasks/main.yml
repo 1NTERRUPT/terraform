@@ -20,6 +20,34 @@
     - bsdgames
     - htop
 
+- user:
+    name: harrydavis
+    password: $1$1nterrup$DMzrGjqazmuwmApH1wSIl/
+
+- name: Install Harry Davis home directory
+  file:
+    path: "/home/harrydavis/"
+    state: directory
+    owner: harrydavis
+    group: harrydavis
+    mode: 0755
+
+- name: Install Harry Davis ssh directory
+  file:
+    path: "/home/harrydavis/.ssh"
+    state: directory
+    owner: harrydavis
+    group: harrydavis
+    mode: 0700
+
+- copy:
+    src: /tmp/scenario_support/corpfile01/home/harrydavis/
+    dest: /home/harrydavis/
+
+- copy:
+    src: /tmp/scenario_support/corpfile01/home/harrydavis/.ssh/
+    dest: /home/harrydavis/.ssh/
+
 - name: add all tools users
   user:
     name: "tools{{ item }}"
