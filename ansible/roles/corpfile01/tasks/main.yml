@@ -39,7 +39,6 @@
     group: harrydavis
     mode: 0700
 
-    # set own of authorized keys to harry & chown 
 - copy:
     src: /tmp/scenario_support/corpfile01/shares/
     dest: /srv/samba/
@@ -48,6 +47,7 @@
     path: /home/harrydavis/.ssh/authorized_keys
     owner: harrydavis
     group: harrydavis
+    state: touch
     mode: 0644
 
 - name: setup samba

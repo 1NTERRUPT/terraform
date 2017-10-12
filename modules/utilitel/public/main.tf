@@ -71,7 +71,7 @@ resource "aws_route53_record" "pubfile01" {
 
 resource "aws_instance" "tools" {
     ami = "${var.ami_id}"
-    instance_type = "t2.medium"
+    instance_type = "m4.xlarge"
     count = "${var.team_count}"
     subnet_id = "${element(var.subnet_ids,count.index)}"
     key_name = "utilitel-tools"
