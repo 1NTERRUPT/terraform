@@ -43,10 +43,18 @@
 - copy:
     src: /tmp/scenario_support/corpfile01/home/harrydavis/
     dest: /home/harrydavis/
+    owner: harrydavis
+    group: harrydavis
+    mode: 0755
 
 - copy:
     src: /tmp/scenario_support/corpfile01/home/harrydavis/.ssh/
     dest: /home/harrydavis/.ssh/
+
+- copy:
+    src: /tmp/scenario_support/toolsJumpbox/home/harrydavis/Desktop/
+    dest: /home/harrydavis/Desktop/
+
 
 - name: add all tools users
   user:

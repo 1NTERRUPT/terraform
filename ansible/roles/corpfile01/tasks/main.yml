@@ -4,6 +4,12 @@
     name: corpfile01
   become: yes
 
+- name: Install Packages
+  apt: name={{ item }} update_cache=yes state=latest
+  with_items:
+    - nmap
+    - exiftool
+
 - user: 
     name: harrydavis
     password: $1$1nterrup$DMzrGjqazmuwmApH1wSIl/
@@ -23,6 +29,9 @@
 - copy:
     src: /tmp/scenario_support/corpfile01/home/harrydavis/
     dest: /home/harrydavis/
+    owner: harrydavis
+    group: harrydavis
+    mode: 0755
 
 - name: Install Harry Davis ssh directory
   file:
