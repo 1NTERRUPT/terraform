@@ -118,7 +118,7 @@ resource "aws_security_group" "all_hmi" {
 
 resource "aws_instance" "corpfile01" {
     ami = "${data.aws_ami.ubuntu16.id}"
-    instance_type = "t2.micro"
+    instance_type = "t2.medium"
     subnet_id = "${element(module.network.subnet_ids[var.corporate],count.index)}"
     key_name = "utilitel-tools"
     security_groups = ["${element(aws_security_group.all_corp.*.id, count.index)}"]
@@ -142,7 +142,7 @@ resource "aws_route53_record" "corpfile01" {
 
 resource "aws_instance" "wikiserver" {
     ami = "${data.aws_ami.ubuntu16.id}"
-    instance_type = "t2.micro"
+    instance_type = "t2.large"
     count = "${var.team_count}"
     subnet_id = "${element(module.network.subnet_ids[var.corporate],count.index)}"
     key_name = "utilitel-tools"
@@ -166,7 +166,7 @@ resource "aws_route53_record" "wikiserver" {
 
 resource "aws_instance" "corpblog01" {
     ami = "${data.aws_ami.ubuntu16.id}"
-    instance_type = "t2.micro"
+    instance_type = "m4.large"
     subnet_id = "${element(module.network.subnet_ids[var.corporate],count.index)}"
     key_name = "utilitel-tools"
     count = "${var.team_count}"
@@ -191,7 +191,7 @@ resource "aws_route53_record" "corpblog01" {
 
 resource "aws_instance" "pumpserver" {
     ami = "${data.aws_ami.ubuntu.id}"
-    instance_type = "t2.micro"
+    instance_type = "t2.medium"
     subnet_id = "${element(module.network.subnet_ids[var.ops],count.index)}"
     key_name = "utilitel-tools"
     security_groups = ["${element(aws_security_group.all_hmi.*.id, count.index)}"]
@@ -216,7 +216,7 @@ resource "aws_route53_record" "pumpserver" {
 
 resource "aws_instance" "opsfile01" {
     ami = "${data.aws_ami.ubuntu16.id}"
-    instance_type = "t2.micro"
+    instance_type = "t2.medium"
     subnet_id = "${element(module.network.subnet_ids[var.ops],count.index)}"
     key_name = "utilitel-tools"
     security_groups = ["${element(aws_security_group.all_hmi.*.id, count.index)}"]

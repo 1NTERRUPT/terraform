@@ -47,7 +47,7 @@ resource "aws_security_group" "tools" {
 
 resource "aws_instance" "pubfile01" {
     ami = "${var.ami_id}"
-    instance_type = "t2.micro"
+    instance_type = "c4.large"
     count = "${var.team_count}"
     subnet_id = "${element(var.subnet_ids,count.index)}"
     key_name = "utilitel-tools"
