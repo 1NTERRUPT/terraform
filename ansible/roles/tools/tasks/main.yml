@@ -60,11 +60,15 @@
   user:
     name: "tools{{ item }}"
     password: $1$1nterrup$CZrFw7SwWrWI.mJzmeAKc1
-  with_sequence: start=0 end=9
+  with_sequence: start=0 end=32
 
 - name: setup xsession for tools user
   command: "echo xfce4-session >~tools{{ item }}/.xsession && chown tools{{ item }}:tools{{ item }} ~tools{{ item }}/.xsession"
-  with_sequence: start=0 end=9
+  with_sequence: start=0 end=32
+
+- template:
+    src: templates/sesman.ini.js
+    dest: /etc/xrdp/sesman.ini
 
 - service:
     name: xrdp
@@ -77,7 +81,7 @@
     owner: "tools{{ item }}"
     group: "tools{{ item }}"
     mode: 0755
-  with_sequence: start=0 end=9
+  with_sequence: start=0 end=32
 
 - name: Copy files to 1NTERRUPT directory
   copy:
@@ -85,4 +89,4 @@
     dest: "/home/tools{{ item }}/Desktop/1NTERRUPT/"
     owner: "tools{{ item }}"
     group: "tools{{ item }}"
-  with_sequence: start=0 end=9
+  with_sequence: start=0 end=32
