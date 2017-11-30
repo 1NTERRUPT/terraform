@@ -67,7 +67,7 @@
   with_sequence: start=0 end=32
 
 - template:
-    src: templates/sesman.ini.js
+    src: templates/sesman.ini.j2
     dest: /etc/xrdp/sesman.ini
 
 - service:

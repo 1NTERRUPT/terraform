@@ -5,6 +5,12 @@
   roles: 
     - backstage
 
+- hosts: tag_Name_picks
+  become: true
+  roles:
+    - picks
+    - { role: fqdn, fqdn: "picks.utilitel.test", hostname: "picks" }
+
 - hosts: tag_Name_corpblog01
   become: true
   roles:
