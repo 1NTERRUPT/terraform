@@ -9,7 +9,7 @@
   become: true
   roles:
     - picks
-    - { role: fqdn, fqdn: "picks.utilitel.test", hostname: "picks" }
+    - { role: fqdn, fqdn: "picks.fantcpicks.net", hostname: "picks" }
 
 - hosts: tag_Name_corpblog01
   become: true
@@ -52,4 +52,4 @@
   become: true
   roles:
     - pumpserver
-    - { role: fqdn, fqdn: "ops-pumpshmi01.utilitel.test", hostname: "ops-pumpshmi01" }
+    - { role: fqdn, fqdn: "pumpshmi01.utilitel.test", hostname: "pumpshmi01" }

@@ -32,7 +32,7 @@ resource "aws_vpc" "command" {
     count			= "${var.team_count}"
 
     tags {
-        Name			= "utilitel_command_vpc"
+        Name			= "c2_command_vpc"
         team			= "${count.index}"
     }
 }
@@ -61,9 +61,9 @@ resource "aws_vpc" "hmi" {
     }
 }
 
-##########################
-# Set up zones and routing
-##########################
+###############################
+# Set up zones and associations
+###############################
 
 resource "aws_route53_zone" "utilitel" {
   name   			= "utilitel.test"
@@ -77,14 +77,32 @@ resource "aws_route53_zone_association" "corporate" {
   vpc_id  			= "${element(aws_vpc.corp.*.id,count.index)}"
 }
 
-resource "aws_route53_zone_association" "command" {
-  zone_id 			= "${element(aws_route53_zone.utilitel.*.zone_id,count.index)}"
-  count 			= "${var.team_count}"
-  vpc_id  			= "${element(aws_vpc.command.*.id,count.index)}"
-}
-
 resource "aws_route53_zone_association" "hmi" {
   zone_id 			= "${element(aws_route53_zone.utilitel.*.zone_id,count.index)}"
+  count 			= "${var.team_count}"
+  vpc_id  			= "${element(aws_vpc.hmi.*.id,count.index)}"
+}
+
+resource "aws_route53_zone" "fantcpicks" {
+  name   			= "fantcpicks.net"
+  count 			= "${var.team_count}"
+  vpc_id 			= "${element(aws_vpc.command.*.id,count.index)}"
+}
+
+resource "aws_route53_zone_association" "pub2fantcpicks" {
+  zone_id 			= "${element(aws_route53_zone.fantcpicks.*.zone_id,count.index)}"
+  count 			= "${var.team_count}"
+  vpc_id  			= "${element(aws_vpc.pub.*.id,count.index)}"
+}
+
+resource "aws_route53_zone_association" "corp2fantcpicks" {
+  zone_id 			= "${element(aws_route53_zone.fantcpicks.*.zone_id,count.index)}"
+  count 			= "${var.team_count}"
+  vpc_id  			= "${element(aws_vpc.corp.*.id,count.index)}"
+}
+
+resource "aws_route53_zone_association" "hmi2fantcpicks" {
+  zone_id 			= "${element(aws_route53_zone.fantcpicks.*.zone_id,count.index)}"
   count 			= "${var.team_count}"
   vpc_id  			= "${element(aws_vpc.hmi.*.id,count.index)}"
 }
@@ -416,3 +434,4 @@ output "route_tables" {
 }
 
 output "utilitel_zones" { value = ["${aws_route53_zone.utilitel.*.zone_id}"] }
+output "fantcpicks_zones" { value = ["${aws_route53_zone.fantcpicks.*.zone_id}"] }

@@ -80,7 +80,7 @@ module "public" {
   subnet_ids 		= "${module.network.subnet_ids[var.public]}"
   internal_cidr_blocks 	= ["${var.cidrs[var.public]}","${var.cidrs[var.corporate]}","${var.cidrs[var.ops]}","${var.cidrs[var.control]}","${var.cidrs[var.command]}"]
   init_script 		= "${data.template_file.script.rendered}"
-  zone_ids  		= "${module.network.utilitel_zones}"
+  zone_ids  		= ["${module.network.utilitel_zones}","${module.network.fantcpicks_zones}"]
 }
 
 ############################
@@ -195,8 +195,8 @@ resource "aws_instance" "picks" {
 
 resource "aws_route53_record" "picks" {
   count 		= "${var.team_count}"
-  zone_id 		= "${element(module.network.utilitel_zones,count.index)}"
-  name    		= "picks.utilitel.test"
+  zone_id 		= "${element(module.network.fantcpicks_zones,count.index)}"
+  name    		= "picks.fantcpicks.net"
   type    		= "A"
   ttl     		= "10"
   records 		= ["${element(aws_instance.picks.*.private_ip, count.index)}"]
