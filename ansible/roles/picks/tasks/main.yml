@@ -5,8 +5,14 @@
   become: yes
 
 - copy:
-    src: /tmp/scenario_support/picks/
+    src: /tmp/scenario_support/picks/www/
     dest: /srv/picks/
+    owner: ubuntu
+    group: ubuntu
+
+- copy:
+    src: /tmp/scenario_support/picks/ftp/
+    dest: /srv/ftp/
     owner: ubuntu
     group: ubuntu
 
@@ -48,3 +54,14 @@
 - service:
     name: nginx
     state: restarted
+
+- copy:
+    src: /tmp/scenario_support/picks/etc/
+    dest: /etc/
+    owner: root
+    group: root
+
+- service:
+    name: vsftpd
+    state: restarted
+
