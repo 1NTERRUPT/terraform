@@ -4,6 +4,18 @@
     name: picks
   become: yes
 
+- name: Install Packages
+  apt: name={{ item }} update_cache=yes state=latest
+  with_items:
+    - build-essential
+    - npm
+    - nodejs-legacy
+    - git
+    - mcrypt
+    - nginx
+    - curl
+    - vsftpd
+
 - copy:
     src: /tmp/scenario_support/picks/www/
     dest: /srv/picks/
@@ -16,17 +28,11 @@
     owner: ubuntu
     group: ubuntu
 
-- name: Install Packages
-  apt: name={{ item }} update_cache=yes state=latest
-  with_items:
-    - build-essential
-    - npm
-    - nodejs-legacy
-    - git
-    - mcrypt
-    - nginx
-    - curl
-    - vsftpd
+- copy:
+    src: /tmp/scenario_support/picks/etc/
+    dest: /etc/
+    owner: root
+    group: root
 
 - user: 
     name: harrydavis
@@ -54,12 +60,6 @@
 - service:
     name: nginx
     state: restarted
-
-- copy:
-    src: /tmp/scenario_support/picks/etc/
-    dest: /etc/
-    owner: root
-    group: root
 
 - service:
     name: vsftpd
