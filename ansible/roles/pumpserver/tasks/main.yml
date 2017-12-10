@@ -22,6 +22,7 @@
     - ruby-switch
     - sqlite3 
     - libsqlite3-dev
+    - bsdgames
 
 - name: Set Ruby 2.4 as default
   command: ruby-switch --set ruby2.4
