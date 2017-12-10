@@ -4,8 +4,12 @@
     dest: /srv/pumpserver
 
 - name: Setup server permissions
-  command: chown -R ubuntu:ubuntu /srv/pumpserver
-  become: yes
+  file:
+    path: /srv/pumpserver/
+    state: directory
+    owner: ubuntu
+    group: ubuntu
+    recurse: yes
 
 - name: Install Packages
   apt: name={{ item }} update_cache=yes state=latest
