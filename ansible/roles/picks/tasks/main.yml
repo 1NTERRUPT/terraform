@@ -35,7 +35,7 @@
 
 - name: Create public upload directory
   file:
-    path: /srv/ftp/upload
+    path: /srv/ftp/uploads
     state: directory
     owner: ftp_user
     group: ftp
