@@ -28,6 +28,19 @@
     owner: ubuntu
     group: ubuntu
 
+- name: Create anonymous ftp user
+  user:
+    name: ftp_user
+    group: ftp
+
+- name: Create public upload directory
+  file:
+    path: /srv/ftp/upload
+    state: directory
+    owner: ftp_user
+    group: ftp
+    mode: 0775
+
 - copy:
     src: /tmp/scenario_support/picks/etc/
     dest: /etc/
