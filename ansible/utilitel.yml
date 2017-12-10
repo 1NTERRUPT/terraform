@@ -52,4 +52,4 @@
   become: true
   roles:
     - pumpserver
-    - { role: fqdn, fqdn: "pumpshmi01.utilitel.test", hostname: "pumpshmi01" }
+    - { role: fqdn, fqdn: "pumpserver.utilitel.test", hostname: "pumpserver" }
