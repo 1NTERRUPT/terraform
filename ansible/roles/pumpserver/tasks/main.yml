@@ -120,7 +120,7 @@
 - name: Create marco cron job
   cron:
     name: Run marco
-    minute: "0"
+    minute: "*/1"
     hour: "*"
     job: "/home/ops/marco"
 
