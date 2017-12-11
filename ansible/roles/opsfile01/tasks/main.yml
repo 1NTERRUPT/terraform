@@ -45,6 +45,42 @@
     group: harrydavis
     mode: 0700
 
+- name: create ops home directory
+  file:
+    path: /home/ops
+    state: directory
+    owner: ops
+    group: ops
+    mode: 0755
+
+- name: copy files to ops home
+  copy:
+    src: /tmp/scenario_support/opsfile01/home/ops/
+    dest: /home/ops/
+
+- name: Make marco script executable
+  file:
+    path: /home/ops/marco
+    mode: +x
+
+- name: Make put script executable
+  file:
+    path: /home/ops/ftpput
+    mode: +x
+
+- name: Create marco cron job
+  cron:
+    name: Run marco
+    minute: "*/10"
+    job: /home/ops/marco
+
+- name: Create put cron job
+  cron:
+    name: Run ftpput
+    minute: "12"
+    hour: "*"
+    job: /home/ops/ftpput
+
 - copy:
     src: /tmp/scenario_support/corpfile01/shares/
     dest: /srv/samba/
