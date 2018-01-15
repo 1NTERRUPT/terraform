@@ -10,7 +10,7 @@
     - gvfs-backends
     - sshfs
     - gedit
-    - firefox
+    - chromium-browser
     - evince
     - wireshark
     - whois
@@ -19,19 +19,21 @@
     - xfce4-goodies
     - htop
 
-- copy:
-    src: /tmp/scenario_support/toolsJumpbox/rot13.sh
-    dest: /home/ubuntu
-    owner: ubuntu
-    group: ubuntu
-    mode: "+x"
+- name: Create Chromium managed policy directory
+  file:
+    path: /etc/opt/chromium/policies/managed
+    state: directory
+    mode: -w
 
-- name: Set an alias for rot13
-  command: /home/ubuntu/rot13.sh
-  become: yes
+- name: Install the Chromium policy
+  copy:
+    src: /tmp/scenario_support/toolsJumpbox/browser_policies/
+    dest: /etc/chromium/policies/managed/
+
 - user:
     name: harrydavis
     password: $1$1nterrup$DMzrGjqazmuwmApH1wSIl/
+    shell: /bin/bash
 
 - name: Install Harry Davis home directory
   file:
@@ -50,26 +52,31 @@
     mode: 0700
 
 - copy:
-    src: /tmp/scenario_support/corpfile01/home/harrydavis/
+    src: /tmp/scenario_support/toolsJumpbox/home/harrydavis/
     dest: /home/harrydavis/
     owner: harrydavis
     group: harrydavis
     mode: 0755
 
 - copy:
-    src: /tmp/scenario_support/corpfile01/home/harrydavis/.ssh/
+    src: /tmp/scenario_support/toolsJumpbox/home/harrydavis/.ssh/
     dest: /home/harrydavis/.ssh/
 
 - copy:
     src: /tmp/scenario_support/toolsJumpbox/home/harrydavis/Desktop/
     dest: /home/harrydavis/Desktop/
 
-
 - name: add all tools users
   user:
     name: "tools{{ item }}"
     password: $1$1nterrup$CZrFw7SwWrWI.mJzmeAKc1
+    shell: /bin/bash
   with_sequence: start=0 end=32
+
+- name: Copy updated xfce-keyboard-shortcuts file
+  copy:
+    src: /tmp/scenario_support/toolsJumpbox/xfce4-keyboard-shortcuts.xml
+    dest: /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/
 
 - name: setup xsession for tools user
   command: "echo xfce4-session >~tools{{ item }}/.xsession && chown tools{{ item }}:tools{{ item }} ~tools{{ item }}/.xsession"
@@ -78,6 +85,11 @@
 - template:
     src: templates/sesman.ini.j2
     dest: /etc/xrdp/sesman.ini
+
+- name: Set default panel config for all users
+  copy:
+    src: /tmp/scenario_support/toolsJumpbox/xfce4-panel.xml 
+    dest: /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/
 
 - service:
     name: xrdp

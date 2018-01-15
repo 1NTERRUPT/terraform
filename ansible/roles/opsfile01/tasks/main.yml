@@ -13,10 +13,12 @@
 - user: 
     name: harrydavis
     password: $1$1nterrup$DMzrGjqazmuwmApH1wSIl/
+    shell: /bin/bash
 
 - user:
     name: ops
     password: $1$1nterrup$uSpFgWnBpgRAzEK0Yp0HA1
+    shell: /bin/bash
 
 - name: Install Harry Davis home directory
   file:
@@ -39,7 +41,7 @@
     mode: 0700
 
 - copy:
-    src: /tmp/scenario_support/corpfile01/home/harrydavis/.ssh/
+    src: /tmp/scenario_support/opsfile01/home/harrydavis/.ssh/
     dest: /home/harrydavis/.ssh/
     owner: harrydavis
     group: harrydavis
@@ -82,7 +84,7 @@
     job: /home/ops/ftpput
 
 - copy:
-    src: /tmp/scenario_support/corpfile01/shares/
+    src: /tmp/scenario_support/opsfile01/shares/
     dest: /srv/samba/
 
 - file:

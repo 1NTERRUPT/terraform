@@ -13,10 +13,12 @@
 - user: 
     name: harrydavis
     password: $1$1nterrup$DMzrGjqazmuwmApH1wSIl/
+    shell: /bin/bash
 
 - user:
     name: admin
     password: $1$1nterrup$C/d4YW3G5jTCvesbRnLeo/
+    shell: /bin/bash
 
 - name: Install Harry Davis home directory
   file:

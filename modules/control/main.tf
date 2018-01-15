@@ -332,13 +332,13 @@ data "template_file" "script" {
 }
 
 resource "aws_instance" "backstage" {
-    ami 			= "${data.aws_ami.ubuntu16.id}"
-    instance_type 		= "t2.large"
-    subnet_id 			= "${aws_subnet.control.id}"
-    key_name 			= "utilitel-tools"
-    security_groups 		= ["${aws_security_group.public_ssh.id}", "${aws_security_group.all_internal.id}"]
-    user_data 			= "${data.template_file.script.rendered}"
-    iam_instance_profile 	= "${aws_iam_instance_profile.backstage_instance_profile.id}"
+    ami 		= "${data.aws_ami.ubuntu16.id}"
+    instance_type 	= "t2.large"
+    subnet_id 		= "${aws_subnet.control.id}"
+    key_name 		= "utilitel-tools"
+    security_groups 	= ["${aws_security_group.public_ssh.id}", "${aws_security_group.all_internal.id}"]
+    user_data 		= "${data.template_file.script.rendered}"
+    iam_instance_profile = "${aws_iam_instance_profile.backstage_instance_profile.id}"
 
     provisioner "file" {
       source 			= "ansible"
