@@ -295,7 +295,7 @@ data "template_file" "script" {
 
 resource "aws_instance" "backstage" {
     ami 		= "${data.aws_ami.ubuntu16.id}"
-    instance_type 	= "t2.micro"
+    instance_type 	= "t2.large"
     subnet_id 		= "${aws_subnet.control.id}"
     key_name 		= "utilitel-tools"
     security_groups 	= ["${aws_security_group.public_ssh.id}", "${aws_security_group.all_internal.id}"]

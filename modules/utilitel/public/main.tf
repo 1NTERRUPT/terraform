@@ -55,7 +55,7 @@ resource "aws_security_group" "tools" {
 
 resource "aws_instance" "pubfile01" {
     ami 		= "${var.ami_id}"
-    instance_type 	= "t2.micro"
+    instance_type 	= "t2.medium"
     count 		= "${var.team_count}"
     subnet_id 		= "${element(var.subnet_ids,count.index)}"
     key_name 		= "utilitel-tools"
@@ -79,7 +79,7 @@ resource "aws_route53_record" "pubfile01" {
 
 resource "aws_instance" "tools" {
     ami 		= "${var.ami_id}"
-    instance_type 	= "t2.micro"
+    instance_type 	= "m4.xlarge"
     count 		= "${var.team_count}"
     subnet_id 		= "${element(var.subnet_ids,count.index)}"
     key_name 		= "utilitel-tools"
