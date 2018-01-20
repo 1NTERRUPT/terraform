@@ -32,7 +32,7 @@
   command: ruby-switch --set ruby2.4
   become: yes
 
-- apt: name=ruby-bundler update_cache=yes state=latest
+- apt: name=ruby-bundler update_cache=yes state=latest force=yes
   become: yes
 
 - name: Install Bundler

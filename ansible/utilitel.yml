@@ -5,6 +5,12 @@
   roles: 
     - backstage
 
+- hosts: tag_Name_scoreboard
+  become: true
+  roles:
+    - scoreboard
+    - { role: fqdn, fqdn: "scoreboard.events.1nterrupt.com", hostname: "scoreboard" }
+
 - hosts: tag_Name_picks
   become: true
   roles:

@@ -17,9 +17,18 @@
     - traceroute
     - exiftool
     - xfce4-goodies
-    - bsdgames
     - htop
 
+- copy:
+    src: /tmp/scenario_support/toolsJumpbox/rot13.sh
+    dest: /home/ubuntu
+    owner: ubuntu
+    group: ubuntu
+    mode: "+x"
+
+- name: Set an alias for rot13
+  command: /home/ubuntu/rot13.sh
+  become: yes
 - user:
     name: harrydavis
     password: $1$1nterrup$DMzrGjqazmuwmApH1wSIl/
