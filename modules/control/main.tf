@@ -6,6 +6,7 @@ variable "cidrs" 			{ type = "map" }
 variable "internal_cidr_blocks" 	{ type = "list" }
 variable "internal_route_tables" 	{ type = "map" }
 variable "team_count" 			{}
+variable "tools_public_addresses" { type = "list" }
 
 variable "public" 			{ default = "public" }
 variable "corporate" 			{ default = "corporate" }
@@ -286,21 +287,34 @@ resource "aws_security_group" "tools_scoreboard" {
     name		= "tools to scoreboard"
     description		= "Tools access to the scoreboard server"
     vpc_id 		= "${aws_vpc.control.id}"
+}
 
-    ingress {
-        from_port 	= 80
-        to_port 	= 80
-        protocol 	= "tcp"
-        cidr_blocks 	= ["${cidrsubnet(var.cidrs[var.public], 0, count.index)}"]
-    }
+resource "template_file" "cidr" {
+  template = "$${network}/32"
+  count = "${var.team_count}" 
+  vars {
+    network = "${cidrhost("${element(var.tools_public_addresses,count.index)}/32", 0)}"
+  }
+}
 
+resource "aws_security_group_rule" "tools_scoreboard_http" {
+  type            = "ingress"
+  from_port       = 80
+  to_port         = 80
+  protocol        = "tcp"
+  count = "${var.team_count}" 
+  cidr_blocks     = ["${element(template_file.cidr.*.rendered, count.index)}"]
+  security_group_id = "${aws_security_group.tools_scoreboard.id}"
+}
 
-    ingress {
-        from_port 	= 443
-        to_port 	= 443
-        protocol 	= "tcp"
-        cidr_blocks 	= ["${cidrsubnet(var.cidrs[var.public], 0, count.index)}"]
-    }
+resource "aws_security_group_rule" "tools_scoreboard_https" {
+  type            = "ingress"
+  from_port       = 443
+  to_port         = 443
+  protocol        = "tcp"
+  count = "${var.team_count}" 
+  cidr_blocks     = ["${element(template_file.cidr.*.rendered, count.index)}"]
+  security_group_id = "${aws_security_group.tools_scoreboard.id}"
 }
 
 resource "aws_security_group" "all_internal" {

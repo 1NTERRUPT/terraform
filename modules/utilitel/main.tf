@@ -309,3 +309,5 @@ output "vpc_ids" { value = "${module.network.vpc_ids}" }
 output "internal_cidr_blocks" { value = ["${cidrsubnet(var.cidrs[var.public], 8 ,1)}","${cidrsubnet(var.cidrs[var.corporate], 8 ,1)}","${cidrsubnet(var.cidrs[var.ops], 8 ,1)}","${cidrsubnet(var.cidrs[var.control], 8 ,1)}"] }
 
 output "route_tables" { value = "${module.network.route_tables}" }
+
+output "tools_addresses" { value = "${module.public.tools_addresses}" }

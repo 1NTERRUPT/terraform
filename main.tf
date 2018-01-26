@@ -22,6 +22,7 @@ module "control" {
     cidrs 		= "${var.cidrs}"
     internal_cidr_blocks = "${module.utilitel.internal_cidr_blocks}"
     internal_route_tables = "${module.utilitel.route_tables}"
+    tools_public_addresses = "${module.utilitel.tools_addresses}"
 
     team_count = "${var.team_count}"
 }

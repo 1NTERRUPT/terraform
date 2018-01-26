@@ -109,3 +109,5 @@ resource "aws_route53_record" "tools_ext" {
   ttl     		= "10"
   records 		= ["${element(aws_instance.tools.*.public_ip, count.index)}"]
 }
+
+output "tools_addresses" { value = "${aws_instance.tools.*.public_ip}" }
