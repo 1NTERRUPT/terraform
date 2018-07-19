@@ -4,6 +4,14 @@
     name: corpblog01
   become: yes
 
+- name: Get variables
+  include_vars:
+    file: vars.yml
+
+- name: Set time zone
+  timezone:
+    name: "{{ timezone }}"
+
 - copy:
     src: /tmp/scenario_support/corpblog01/
     dest: /srv/corpblog01/

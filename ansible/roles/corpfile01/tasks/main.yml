@@ -4,6 +4,14 @@
     name: corpfile01
   become: yes
 
+- name: Get variables
+  include_vars:
+    file: vars.yml
+
+- name: Set time zone
+  timezone:
+    name: "{{ timezone }}"
+
 - name: Install Packages
   apt: name={{ item }} update_cache=yes state=latest
   with_items:

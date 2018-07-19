@@ -1,4 +1,7 @@
-variable "cidr" 				{}
+variable "cidr" 			{}
+variable "inst_type_default"		{}
+variable "inst_type_scoreboard"		{}
+variable "inst_type_jumpbox"		{}
 variable "master_key" 			{}
 variable "region" 			{}
 variable "vpc_ids" 			{ type = "map"}
@@ -6,8 +9,7 @@ variable "cidrs" 			{ type = "map" }
 variable "internal_cidr_blocks" 	{ type = "list" }
 variable "internal_route_tables" 	{ type = "map" }
 variable "team_count" 			{}
-variable "tools_public_addresses" { type = "list" }
-
+variable "tools_public_addresses" 	{ type = "list" }
 variable "public" 			{ default = "public" }
 variable "corporate" 			{ default = "corporate" }
 variable "ops" 				{ default = "ops" }
@@ -347,7 +349,7 @@ data "template_file" "script" {
 
 resource "aws_instance" "backstage" {
     ami 		= "${data.aws_ami.ubuntu16.id}"
-    instance_type 	= "t2.large"
+    instance_type 	= "${var.inst_type_default}"
     subnet_id 		= "${aws_subnet.control.id}"
     key_name 		= "utilitel-tools"
     security_groups 	= ["${aws_security_group.public_ssh.id}", "${aws_security_group.all_internal.id}"]
@@ -412,8 +414,8 @@ data "template_file" "update_script" {
 }
 
 resource "aws_instance" "scoreboard" {
-    ami 				= "${data.aws_ami.ubuntu16.id}"
-    instance_type 		= "t2.micro"
+    ami 			= "${data.aws_ami.ubuntu16.id}"
+    instance_type 		= "${var.inst_type_scoreboard}"
     subnet_id 			= "${aws_subnet.control.id}"
     key_name 			= "utilitel-tools"
     security_groups 		= ["${aws_security_group.tools_scoreboard.id}", "${aws_security_group.public_ssh.id}", "${aws_security_group.all_internal.id}"]

@@ -6,4 +6,5 @@ sudo apt-get install ntp
 sudo service ntp stop
 sudo ntpd -gq
 sudo service ntp start
+sudo unattended-upgrade
 touch /tmp/signal

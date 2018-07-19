@@ -1,10 +1,13 @@
-variable "vpc_ids" 	{ type = "list" }
-variable "subnet_ids" 	{ type = "list" }
+variable "vpc_ids" 		{ type = "list" }
+variable "subnet_ids" 		{ type = "list" }
 variable "internal_cidr_blocks" { type = "list" }
-variable "team_count" 	{}
-variable "ami_id" 	{}
-variable "init_script" 	{}
-variable "zone_ids" 	{ type = "list" }
+variable "team_count" 		{}
+variable "ami_id" 		{}
+variable "init_script" 		{}
+variable "zone_ids" 		{ type = "list" }
+variable "inst_type_default"	{}
+variable "inst_type_jumpbox"	{}
+
 
 data "aws_route53_zone" "events" {
   name 			= "events.1nterrupt.com"
@@ -55,7 +58,7 @@ resource "aws_security_group" "tools" {
 
 resource "aws_instance" "pubfile01" {
     ami 		= "${var.ami_id}"
-    instance_type 	= "t2.medium"
+    instance_type 	= "${var.inst_type_default}"
     count 		= "${var.team_count}"
     subnet_id 		= "${element(var.subnet_ids,count.index)}"
     key_name 		= "utilitel-tools"
@@ -79,7 +82,7 @@ resource "aws_route53_record" "pubfile01" {
 
 resource "aws_instance" "tools" {
     ami 		= "${var.ami_id}"
-    instance_type 	= "m4.xlarge"
+    instance_type 	= "${var.inst_type_jumpbox}"
     count 		= "${var.team_count}"
     subnet_id 		= "${element(var.subnet_ids,count.index)}"
     key_name 		= "utilitel-tools"

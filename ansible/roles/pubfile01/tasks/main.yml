@@ -4,6 +4,14 @@
     name: pubfile01
   become: yes
 
+- name: Get variables
+  include_vars:
+    file: vars.yml
+
+- name: Set time zone
+  timezone:
+    name: "{{ timezone }}"
+
 - user: 
     name: harrydavis
     password: $1$1nterrup$DMzrGjqazmuwmApH1wSIl/

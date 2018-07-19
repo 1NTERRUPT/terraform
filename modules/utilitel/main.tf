@@ -1,16 +1,18 @@
-variable "team_count" 	{}
-variable "region" 	{}
-variable "cidrs" 	{ type = "map" }
-variable "cfg_bucket" 	{}
+variable "team_count" 		{}
+variable "region" 		{}
+variable "cidrs" 		{ type = "map" }
+variable "cfg_bucket" 		{}
+variable "inst_type_default"	{}
+variable "inst_type_scoreboard" {}
+variable "inst_type_jumpbox"	{}
+variable "public" 		{ default = "public" }
+variable "corporate" 		{ default = "corporate" }
+variable "ops" 			{ default = "ops" }
+variable "control" 		{ default = "control" }
+variable "command"		{ default = "command" }
 
-variable "public" 	{ default = "public" }
-variable "corporate" 	{ default = "corporate" }
-variable "ops" 		{ default = "ops" }
-variable "control" 	{ default = "control" }
-variable "command"	{ default = "command" }
-
-variable "image14" 	{ default = ["ubuntu/images/hvm-ssd/ubuntu-trusty-14.04-amd64-server-*"] }
-variable "image16" 	{ default = ["ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server-*"] }
+variable "image14" 		{ default = ["ubuntu/images/hvm-ssd/ubuntu-trusty-14.04-amd64-server-*"] }
+variable "image16" 		{ default = ["ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server-*"] }
 
 
 data "aws_route53_zone" "events" {
@@ -81,6 +83,8 @@ module "public" {
   internal_cidr_blocks 	= ["${var.cidrs[var.public]}","${var.cidrs[var.corporate]}","${var.cidrs[var.ops]}","${var.cidrs[var.control]}","${var.cidrs[var.command]}"]
   init_script 		= "${data.template_file.script.rendered}"
   zone_ids  		= ["${module.network.utilitel_zones}","${module.network.fantcpicks_zones}"]
+  inst_type_default	= "${var.inst_type_default}"
+  inst_type_jumpbox	= "${var.inst_type_jumpbox}"
 }
 
 ############################
@@ -156,7 +160,7 @@ resource "aws_security_group" "all_hmi" {
 
 resource "aws_instance" "corpfile01" {
     ami 		= "${data.aws_ami.ubuntu16.id}"
-    instance_type 	= "t2.medium"
+    instance_type 	= "${var.inst_type_default}"
     subnet_id 		= "${element(module.network.subnet_ids[var.corporate],count.index)}"
     key_name 		= "utilitel-tools"
     security_groups 	= ["${element(aws_security_group.all_corp.*.id, count.index)}"]
@@ -180,7 +184,7 @@ resource "aws_route53_record" "corpfile01" {
 
 resource "aws_instance" "picks" {
     ami 		= "${data.aws_ami.ubuntu16.id}"
-    instance_type 	= "t2.medium"
+    instance_type 	= "${var.inst_type_default}"
     subnet_id 		= "${element(module.network.subnet_ids[var.command],count.index)}"
     key_name 		= "utilitel-tools"
     security_groups 	= ["${element(aws_security_group.all_command.*.id, count.index)}"]
@@ -204,7 +208,7 @@ resource "aws_route53_record" "picks" {
 
 resource "aws_instance" "wikiserver" {
     ami 		= "${data.aws_ami.ubuntu16.id}"
-    instance_type 	= "t2.medium"
+    instance_type 	= "${var.inst_type_default}"
     count 		= "${var.team_count}"
     subnet_id 		= "${element(module.network.subnet_ids[var.corporate],count.index)}"
     key_name 		= "utilitel-tools"
@@ -228,7 +232,7 @@ resource "aws_route53_record" "wikiserver" {
 
 resource "aws_instance" "corpblog01" {
     ami 		= "${data.aws_ami.ubuntu16.id}"
-    instance_type 	= "t2.medium"
+    instance_type 	= "${var.inst_type_default}"
     subnet_id 		= "${element(module.network.subnet_ids[var.corporate],count.index)}"
     key_name 		= "utilitel-tools"
     count 		= "${var.team_count}"
@@ -253,7 +257,7 @@ resource "aws_route53_record" "corpblog01" {
 
 resource "aws_instance" "pumpserver" {
     ami 		= "${data.aws_ami.ubuntu14.id}"
-    instance_type 	= "t2.medium"
+    instance_type 	= "${var.inst_type_default}"
     subnet_id 		= "${element(module.network.subnet_ids[var.ops],count.index)}"
     key_name 		= "utilitel-tools"
     security_groups 	= ["${element(aws_security_group.all_hmi.*.id, count.index)}"]
@@ -278,7 +282,7 @@ resource "aws_route53_record" "pumpserver" {
 
 resource "aws_instance" "opsfile01" {
     ami 		= "${data.aws_ami.ubuntu16.id}"
-    instance_type 	= "t2.medium"
+    instance_type 	= "${var.inst_type_default}"
     subnet_id 		= "${element(module.network.subnet_ids[var.ops],count.index)}"
     key_name 		= "utilitel-tools"
     security_groups 	= ["${element(aws_security_group.all_hmi.*.id, count.index)}"]

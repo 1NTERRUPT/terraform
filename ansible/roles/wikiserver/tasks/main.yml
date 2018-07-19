@@ -4,6 +4,14 @@
     name: wikiserver
   become: yes
 
+- name: Get variables
+  include_vars:
+    file: vars.yml
+
+- name: Set time zone
+  timezone:
+    name: "{{ timezone }}"
+
 - copy:
     src: /tmp/scenario_support/wikiserver/
     dest: /srv/wikiserver/

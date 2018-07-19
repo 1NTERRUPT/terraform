@@ -3,6 +3,14 @@
     repo: https://github.com/1NTERRUPT/water-processing
     dest: /srv/pumpserver
 
+- name: Get variables
+  include_vars:
+    file: vars.yml
+
+- name: Set time zone
+  timezone:
+    name: "{{ timezone }}"
+
 - name: Setup server permissions
   file:
     path: /srv/pumpserver/

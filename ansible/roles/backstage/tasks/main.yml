@@ -4,6 +4,15 @@
     name: backstage
   become: yes
 
+- name: Get variables
+  include_vars:
+    file: vars.yml
+
+- name: Update time zone
+  timezone:
+    name: "{{ timezone }}"
+  become: yes
+
 - name: Setup ssh credentials
   aws_s3:
     bucket: 1nterrupt-util

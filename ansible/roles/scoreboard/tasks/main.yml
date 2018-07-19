@@ -4,34 +4,34 @@
     name: scoreboard
   become: yes
 
+- name: Get variables
+  include_vars:
+    file: vars.yml
+
+- name: Set time zone
+  timezone:
+    name: "{{ timezone }}"
+
 - name: Clone FacebookCTF git repository
   git:
     repo: 'https://github.com/facebook/fbctf.git'
-    dest: /srv/fbctf
+    dest: /var/www/fbctf
     clone: yes
     update: no
-
-- name: Paste updated provision script
-  copy:
-    src: /tmp/scenario_support/scoreboard/provision.sh
-    dest: /srv/fbctf/extra
 
 - name: Paste customized language php file
   copy:
     src: /tmp/scenario_support/scoreboard/lang_en.php
-    dest: /srv/fbctf/src/language
+    dest: /var/www/fbctf/src/language
 
 - name: Paste customized controller php file
   copy:
     src: /tmp/scenario_support/scoreboard/IndexController.php
-    dest: /srv/fbctf/src/controllers
+    dest: /var/www/fbctf/src/controllers
 
-- name: Make initialization script executable
-  file:
-    path: /srv/fbctf/extra/provision.sh
+- name: Past the customized provision script
+  copy:
+    src: /tmp/scenario_support/scoreboard/provision.sh
+    dest: /var/www/fbctf/extra/
     mode: "+x"
-
-- name: Run the provision script
-  command: /srv/fbctf/extra/provision.sh
-  become: yes
 
