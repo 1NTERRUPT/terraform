@@ -6,7 +6,7 @@
 
 - name: Get variables
   include_vars:
-    file: vars.yml
+    file: ./files/vars.yml
 
 - name: Set time zone
   timezone:
@@ -18,20 +18,19 @@
     - build-essential
     - npm
     - nodejs-legacy
-    - git
     - mcrypt
     - nginx
     - curl
     - vsftpd
 
 - copy:
-    src: /tmp/scenario_support/picks/www/
+    src: "{{ content_folder }}picks/www/"
     dest: /srv/picks/
     owner: ubuntu
     group: ubuntu
 
 - copy:
-    src: /tmp/scenario_support/picks/ftp/
+    src: "{{ content_folder }}picks/ftp/"
     dest: /srv/ftp/
     owner: ubuntu
     group: ubuntu
@@ -56,12 +55,14 @@
     group: root
 
 - user: 
-    name: harrydavis
-    password: $1$1nterrup$DMzrGjqazmuwmApH1wSIl/
+    name: "{{ item.name }}"
+    password: "{{ item.password }}"
+  loop: "{{ user_acct }}"
 
 - user:
-    name: admin
-    password: $1$1nterrup$C/d4YW3G5jTCvesbRnLeo/
+    name: "{{ item.name }}"
+    password: "{{ item.password }}"
+  loop: "{{ admin_acct }}"
 
 - name: Install web server
   npm:
@@ -85,4 +86,3 @@
 - service:
     name: vsftpd
     state: restarted
-

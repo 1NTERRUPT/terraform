@@ -6,14 +6,14 @@
 
 - name: Get variables
   include_vars:
-    file: vars.yml
+    file: ./files/vars.yml
 
 - name: Set time zone
   timezone:
     name: "{{ timezone }}"
 
 - copy:
-    src: /tmp/scenario_support/wikiserver/
+    src: "{{ content_folder }}wikiserver/"
     dest: /srv/wikiserver/
     owner: ubuntu
     group: ubuntu
@@ -24,7 +24,6 @@
     - build-essential
     - npm
     - nodejs-legacy
-    - git
     - mcrypt
     - nginx
     - curl

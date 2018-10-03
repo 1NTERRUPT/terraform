@@ -6,14 +6,14 @@
 
 - name: Get variables
   include_vars:
-    file: vars.yml
+    file: ./files/vars.yml
 
 - name: Set time zone
   timezone:
     name: "{{ timezone }}"
 
 - copy:
-    src: /tmp/scenario_support/corpblog01/
+    src: "{{ content_folder }}corpblog01/"
     dest: /srv/corpblog01/
     owner: ubuntu
     group: ubuntu
@@ -36,7 +36,6 @@
   npm:
     path: /srv/corpblog01/
   register: npm_finished
-
 
 - name: Stop APP
   sudo_user: ubuntu
@@ -66,4 +65,3 @@
 - service:
     name: nginx
     state: restarted
-

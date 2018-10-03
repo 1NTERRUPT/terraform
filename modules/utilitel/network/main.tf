@@ -1,6 +1,5 @@
 variable "cidrs" 		{ type="map" }
 variable "team_count" 		{}
-
 variable "public" 		{ default = "public" }
 variable "corporate" 		{ default = "corporate" }
 variable "ops" 			{ default = "ops" }

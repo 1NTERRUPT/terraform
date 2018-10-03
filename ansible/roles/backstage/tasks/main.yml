@@ -6,7 +6,7 @@
 
 - name: Get variables
   include_vars:
-    file: vars.yml
+    file: ./files/vars.yml
 
 - name: Update time zone
   timezone:
@@ -15,8 +15,8 @@
 
 - name: Setup ssh credentials
   aws_s3:
-    bucket: 1nterrupt-util
-    object: keys/utilitel-tools.pem
+    bucket: "{{ s3_bucket_keys }}"
+    object: keys/{{ key_file }}
     dest: /home/ubuntu/.ssh/id_rsa
     mode: get
 
@@ -27,13 +27,11 @@
     mode: 0700
 
 - name: Create scenario folder
-  file: path=/tmp/scenario_support/corp-file01 state=directory owner=ubuntu group=ubuntu 
+  file:
+    path: "{{ content_folder }}"
+    state: directory 
+    owner: ubuntu 
+    group: ubuntu 
 
 - name: Download scenario support files
-  command: "aws s3 cp --region=us-east-1 --recursive s3://1nterrupt-scenario-support /tmp/scenario_support/"
-
-- name: Samba client
-  apt:
-    name: samba-client
-    state: present
-  become: true
+  command: "aws s3 cp --region={{ aws_region }} --recursive s3://{{ s3_bucket_content }} {{ content_folder }}"

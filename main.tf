@@ -1,16 +1,12 @@
-variable "master_key" 		{}
-variable "cidrs" 		{ type = "map" }
-variable "cfg_bucket" 		{}
-variable "region" 		{} 
-variable "control" 		{ default = "control" }
-variable "team_count"		{}
-variable "inst_type_default"	{}
-variable "inst_type_scoreboard" {}
-variable "inst_type_jumpbox"	{}
+provider "aws" {
+  region			= "${var.region}"
+  profile			= "${var.profile}"
+}
 
 module "utilitel" {
     source 			= "./modules/utilitel"
-    region 			= "${var.region}"
+    region			= "${var.region}"
+    ctf-domain			= "${var.ctf-domain}"
     cidrs 			= "${var.cidrs}"
     cfg_bucket 			= "${var.cfg_bucket}"
     team_count 			= "${var.team_count}"
@@ -21,9 +17,11 @@ module "utilitel" {
 
 module "control" {
     source 			= "./modules/control"
+    region			= "${var.region}"
     cidr 			= "${var.cidrs[var.control]}"
     master_key 			= "${var.master_key}"
-    region 			= "${var.region}"
+    key_name			= "${var.key_name}"
+    ctf-domain			= "${var.ctf-domain}"
     vpc_ids 			= "${module.utilitel.vpc_ids}"
     cidrs 			= "${var.cidrs}"
     internal_cidr_blocks 	= "${module.utilitel.internal_cidr_blocks}"

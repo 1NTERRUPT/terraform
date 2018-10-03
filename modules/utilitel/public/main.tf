@@ -7,10 +7,10 @@ variable "init_script" 		{}
 variable "zone_ids" 		{ type = "list" }
 variable "inst_type_default"	{}
 variable "inst_type_jumpbox"	{}
-
+variable "ctf-domain"		{}
 
 data "aws_route53_zone" "events" {
-  name 			= "events.1nterrupt.com"
+  name 			= "${var.ctf-domain}"
 }
 
 ############################
@@ -98,7 +98,7 @@ resource "aws_instance" "tools" {
 resource "aws_route53_record" "tools" {
   count 		= "${var.team_count}"
   zone_id 		= "${element(var.zone_ids,count.index)}"
-  name    		= "tools${count.index}.utilitel.test"
+  name    		= "tools${count.index + 1}.utilitel.test"
   type    		= "A"
   ttl     		= "10"
   records 		= ["${element(aws_instance.tools.*.private_ip, count.index)}"]
@@ -107,7 +107,7 @@ resource "aws_route53_record" "tools" {
 resource "aws_route53_record" "tools_ext" {
   zone_id 		= "${data.aws_route53_zone.events.zone_id}"
   count 		= "${var.team_count}"
-  name    		= "team-${count.index}.${data.aws_route53_zone.events.name}"
+  name    		= "team-${count.index + 1}.${data.aws_route53_zone.events.name}"
   type    		= "A"
   ttl     		= "10"
   records 		= ["${element(aws_instance.tools.*.public_ip, count.index)}"]

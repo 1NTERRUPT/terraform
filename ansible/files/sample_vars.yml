@@ -1,0 +1,91 @@
+##################################################
+#
+# This variable file is used to modify the Ansible
+# portion of the Ansible Treasure Hunt set up.
+# Most values here may/should be modified to suit 
+# your needs. These settings are not configurable
+# by the values of the Terraform variables or vice
+# versa.
+#
+##################################################
+
+##################################################
+#
+# Configure your regional-specific settings here.
+# 
+##################################################
+
+# Set local information for all of the instances
+
+timezone: America/New_York
+aws_region: us-east-1
+
+# Set the number of player accounts on the jump box
+# This is different than the number of teams set in
+# the Terraform variables file.
+
+user_count: 5 
+
+##################################################
+#
+# Set the AWS bucket name containing the content 
+# and download location on the backstage server. 
+# The content files are used to populate wiki 
+# articles, docs, etc., on the instances created
+# by Ansible. The contents are read from S3 and 
+# then installed in the location on the
+# backstage server noted by the content_folder 
+# variable.
+#
+##################################################
+
+s3_bucket_content: # Enter the name of your S3 bucket containing the scenario content files
+content_folder: /tmp/scenario_support/ # This is the default but may be modified 
+
+# Set the AWS bucket name that contains the keys used by Ansible and the key name
+s3_bucket_keys: # Enter the name of your S3 bucket containing your AWS key
+utilitel_key: # Enter the name of your key file and include the .pem extension
+
+##################################################
+#
+# Configure your user account information here.
+# The user passwords must be hashed with a salt and 
+# you will use the python crypt module to generate
+# the hash. Use the following syntax from the
+# command line:
+#
+#   python -c 'import crypt; print crypt.crypt("This is my Password", "$1$SomeSalt$")'
+#
+# Note that you can and should change the admin
+# account password to whatever you like. Do NOT
+# change the user or ops accounts as there is
+# static content that refers to the user names
+# and passwords.
+#
+##################################################
+
+# Create the user accounts
+
+admin_acct:
+  - { name: admin,
+      password: $1$1nterrup$C/d4YW3G5jTCvesbRnLeo/
+    }
+
+user_acct:
+  - { name: harrydavis,
+      password: $1$1nterrup$DMzrGjqazmuwmApH1wSIl/
+    }
+
+ops_acct:
+  - { name: ops,
+      password: $1$1nterrup$uSpFgWnBpgRAzEK0Yp0HA1
+    }
+
+player_acct:
+  - { name: player,
+      password: $1$1nterrup$CZrFw7SwWrWI.mJzmeAKc1
+    }
+
+# Set the default shell for all users
+
+shell: /bin/bash

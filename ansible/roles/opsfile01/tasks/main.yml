@@ -6,7 +6,7 @@
 
 - name: Get variables
   include_vars:
-    file: vars.yml
+    file: ./files/vars.yml
 
 - name: Set time zone
   timezone:
@@ -19,41 +19,47 @@
     - exiftool
 
 - user: 
-    name: harrydavis
-    password: $1$1nterrup$DMzrGjqazmuwmApH1wSIl/
-    shell: /bin/bash
+    name: "{{ item.name }}"
+    password: "{{ item.password }}"
+    shell: "{{ shell }}"
+  loop: "{{ user_acct }}"
 
 - user:
-    name: ops
-    password: $1$1nterrup$uSpFgWnBpgRAzEK0Yp0HA1
-    shell: /bin/bash
+    name: "{{ item.name }}"
+    password: "{{ item.password }}"
+    shell: "{{ shell }}"
+  loop: "{{ ops_acct }}"
 
-- name: Install Harry Davis home directory
+- name: Install user home directory
   file:
-    path: "/home/harrydavis/"
+    path: /home/{{ item.name }}/
     state: directory
-    owner: harrydavis
-    group: harrydavis
+    owner: "{{ item.name }}"
+    group: "{{ item.name }}"
     mode: 0755
+  loop: "{{ user_acct }}"
 
 - copy:
-    src: /tmp/scenario_support/opsfile01/home/harrydavis/
-    dest: /home/harrydavis/
-    
-- name: Install Harry Davis ssh directory
+    src: "{{ content_folder }}opsfile01/home/{{ item.name }}/"
+    dest: /home/{{ item.name }}/
+  loop: "{{ user_acct }}"
+
+- name: Install user ssh directory
   file:
-    path: "/home/harrydavis/.ssh"
+    path: /home/{{ item.name }}/.ssh
     state: directory
-    owner: harrydavis
-    group: harrydavis
+    owner: "{{ item.name }}"
+    group: "{{ item.name }}"
     mode: 0700
+  loop: "{{ user_acct }}"
 
 - copy:
-    src: /tmp/scenario_support/opsfile01/home/harrydavis/.ssh/
-    dest: /home/harrydavis/.ssh/
-    owner: harrydavis
-    group: harrydavis
+    src: "{{ content_folder }}opsfile01/home/{{ item.name }}/.ssh/"
+    dest: /home/{{ item.name }}/.ssh/
+    owner: "{{ item.name }}"
+    group: "{{ item.name }}"
     mode: 0700
+  loop: "{{ user_acct }}"
 
 - name: create ops home directory
   file:
@@ -65,45 +71,51 @@
 
 - name: copy files to ops home
   copy:
-    src: /tmp/scenario_support/opsfile01/home/ops/
-    dest: /home/ops/
+    src: "{{ content_folder }}opsfile01/home/{{ item.name }}/"
+    dest: /home/{{ item.name }}/
+  loop: "{{ ops_acct }}"
 
 - name: Make marco script executable
   file:
-    path: /home/ops/marco
+    path: /home/{{ item.name }}/marco
     mode: +x
+  loop: "{{ ops_acct }}"
 
 - name: Make put script executable
   file:
-    path: /home/ops/ftpput
+    path: /home/{{ item.name }}/ftpput
     mode: +x
+  loop: "{{ ops_acct }}"
 
 - name: Create marco cron job
   cron:
     name: Run marco
     minute: "*/10"
-    job: /home/ops/marco
+    job: /home/{{ item.name }}/marco
+  loop: "{{ ops_acct }}"
 
 - name: Create put cron job
   cron:
     name: Run ftpput
     minute: "12"
     hour: "*"
-    job: /home/ops/ftpput
+    job: /home/{{ item.name }}/ftpput
+  loop: "{{ ops_acct }}"
 
 - copy:
-    src: /tmp/scenario_support/opsfile01/shares/
+    src: "{{ content_folder }}opsfile01/shares/"
     dest: /srv/samba/
 
 - file:
-    path: /home/harrydavis/.ssh/authorized_keys
-    owner: harrydavis
-    group: harrydavis
+    path: /home/{{ item.name }}/.ssh/authorized_keys
+    owner: "{{ item.name }}"
+    group: "{{ item.name }}"
     state: touch
     mode: 0644
+  loop: "{{ user_acct }}"
 
 - copy:
-    src: /tmp/scenario_support/opsfile01/shares/
+    src: "{{ content_folder }}opsfile01/shares/"
     dest: /srv/samba/
 
 - name: setup samba

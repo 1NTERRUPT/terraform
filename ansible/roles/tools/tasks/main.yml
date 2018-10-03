@@ -1,7 +1,7 @@
 ---
 - name: Get variables
   include_vars:
-    file: vars.yml
+    file: ./files/vars.yml
 
 - name: Set time zone
   timezone:
@@ -35,60 +35,66 @@
 
 - name: Install the Chromium policy
   copy:
-    src: /tmp/scenario_support/toolsJumpbox/browser_policies/
+    src: "{{ content_folder }}toolsJumpbox/browser_policies/"
     dest: /etc/chromium/policies/managed/
 
 - user:
-    name: harrydavis
-    password: $1$1nterrup$DMzrGjqazmuwmApH1wSIl/
-    shell: /bin/bash
+    name: "{{ item.name }}"
+    password: "{{ item.password }}"
+    shell: "{{ shell }}"
+  loop: "{{ user_acct }}"
 
-- name: Install Harry Davis home directory
+- name: Install the user home directory
   file:
-    path: "/home/harrydavis/"
+    path: /home/{{ item.name }}
     state: directory
-    owner: harrydavis
-    group: harrydavis
+    owner: "{{ item.name }}"
+    group: "{{ item.name }}"
     mode: 0755
+  loop: "{{ user_acct }}"
 
-- name: Install Harry Davis ssh directory
+- name: Install the user ssh directory
   file:
-    path: "/home/harrydavis/.ssh"
+    path: /home/{{ item.name }}/.ssh
     state: directory
-    owner: harrydavis
-    group: harrydavis
+    owner: "{{ item.name }}"
+    group: "{{ item.name }}"
     mode: 0700
+  loop: "{{ user_acct }}"
 
 - copy:
-    src: /tmp/scenario_support/toolsJumpbox/home/harrydavis/
-    dest: /home/harrydavis/
-    owner: harrydavis
-    group: harrydavis
+    src: "{{ content_folder }}toolsJumpbox/home/{{ item.name }}/"
+    dest: /home/{{ item.name }}/
+    owner: "{{ item.name }}"
+    group: "{{ item.name }}"
     mode: 0755
+  loop: "{{ user_acct }}"
 
 - copy:
-    src: /tmp/scenario_support/toolsJumpbox/home/harrydavis/.ssh/
-    dest: /home/harrydavis/.ssh/
+    src: "{{ content_folder }}toolsJumpbox/home/{{ item.name}}/.ssh/"
+    dest: /home/{{ item.name }}/.ssh/
+  loop: "{{ user_acct }}"
 
 - copy:
-    src: /tmp/scenario_support/toolsJumpbox/home/harrydavis/Desktop/
-    dest: /home/harrydavis/Desktop/
+    src: "{{ content_folder }}toolsJumpbox/home/{{ item.name }}/Desktop/"
+    dest: /home/{{ item.name }}/Desktop/
+  loop: "{{ user_acct }}"
 
-- name: add all tools users
+- name: Create the player accounts
   user:
-    name: "tools{{ item }}"
-    password: $1$1nterrup$CZrFw7SwWrWI.mJzmeAKc1
-    shell: /bin/bash
-  with_sequence: start=0 end=32
+    name: "{{ item }}"
+    password: $1$1nterrup$1d2n7Q0.r54s
+    shell: "{{ shell }}"
+  with_sequence: count={{ user_count }} format=player%01d
 
 - name: Copy updated xfce-keyboard-shortcuts file
   copy:
-    src: /tmp/scenario_support/toolsJumpbox/xfce4-keyboard-shortcuts.xml
+    src: "{{ content_folder }}toolsJumpbox/xfce4-keyboard-shortcuts.xml"
     dest: /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/
 
-- name: setup xsession for tools user
-  command: "echo xfce4-session >~tools{{ item }}/.xsession && chown tools{{ item }}:tools{{ item }} ~tools{{ item }}/.xsession"
-  with_sequence: start=0 end=32
+- name: Setup xsession for the player accounts
+  command: "echo xfce4-session >~{{ item }}/.xsession && chown {{ item }}:{{ item }} ~{{ item }}/.xsession"
+  with_sequence: count={{ user_count }} format=player%01d
 
 - template:
     src: templates/sesman.ini.j2
@@ -96,7 +102,7 @@
 
 - name: Set default panel config for all users
   copy:
-    src: /tmp/scenario_support/toolsJumpbox/xfce4-panel.xml 
+    src: "{{ content_folder }}toolsJumpbox/xfce4-panel.xml" 
     dest: /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/
 
 - service:
@@ -105,17 +111,17 @@
 
 - name: Install 1NTERRUPT directory
   file:
-    path: "/home/tools{{ item }}/Desktop/1NTERRUPT"
+    path: "/home/{{ item }}/Desktop/1NTERRUPT"
     state: directory
-    owner: "tools{{ item }}"
-    group: "tools{{ item }}"
+    owner: "{{ item }}"
+    group: "{{ item }}"
     mode: 0755
-  with_sequence: start=0 end=32
+  with_sequence: count={{ user_count }} format=player%01d
 
 - name: Copy files to 1NTERRUPT directory
   copy:
-    src: /tmp/scenario_support/toolsJumpbox/1NTERRUPT/
-    dest: "/home/tools{{ item }}/Desktop/1NTERRUPT/"
-    owner: "tools{{ item }}"
-    group: "tools{{ item }}"
-  with_sequence: start=0 end=32
+    src: "{{ content_folder }}toolsJumpbox/1NTERRUPT/"
+    dest: "/home/{{ item }}/Desktop/1NTERRUPT/"
+    owner: "{{ item }}"
+    group: "{{ item }}"
+  with_sequence: count={{ user_count }} format=player%01d

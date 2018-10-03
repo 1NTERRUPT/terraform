@@ -5,7 +5,7 @@
 
 - name: Get variables
   include_vars:
-    file: vars.yml
+    file: ./files/vars.yml
 
 - name: Set time zone
   timezone:
@@ -25,7 +25,6 @@
     - build-essential
     - npm
     - nodejs-legacy
-    - git
     - mcrypt
     - nginx
     - curl
@@ -104,43 +103,49 @@
 
 - name: Create generic ops user
   user:
-    name: ops 
-# Don't forget to set a password
+    name: "{{ item.name }}"
+    password: "{{ item.password }}"
+  loop: "{{ ops_acct }}"
 
-- name: Create ops home directory
+- name: Create ops user home directory
   file:
-    path: /home/ops/
+    path: /home/{{ item.name }}/
     state: directory
-    owner: ops
-    group: ops
+    owner: "{{ item.name }}"
+    group: "{{ item.name }}"
     mode: 0755
+  loop: "{{ ops_acct }}"
 
-- name: Copy content to ops home directory
+- name: Copy content to ops user home directory
   copy:
-    src: /tmp/scenario_support/pumpshmi01/home/ops/
-    dest: /home/ops/
+    src: "{{ content_folder }}pumpshmi01/home/{{ item.name }}/"
+    dest: /home/{{ item.name }}/
+  loop: "{{ ops_acct }}"
 
 - name: Make marco script executable
   file:
-    path: /home/ops/marco
+    path: /home/{{ item.name }}/marco
     mode: +x
+  loop: "{{ ops_acct }}"
 
 - name: Make ftp script executable
   file:
-    path: /home/ops/ftpput
+    path: /home/{{ item.name }}/ftpput
     mode: +x
+  loop: "{{ ops_acct }}"
 
 - name: Create marco cron job
   cron:
     name: Run marco
     minute: "*/1"
     hour: "*"
-    job: "/home/ops/marco"
+    job: /home/{{ item.name }}/marco
+  loop: "{{ ops_acct }}"
 
 - name: Create ftp cron job
   cron:
     name: Run ftpput
     minute: "10"
     hour: "*"
-    job: "/home/ops/ftpput"
+    job: /home/{{ ops_acct }}/ftpput
 

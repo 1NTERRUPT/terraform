@@ -6,7 +6,7 @@
 
 - name: Get variables
   include_vars:
-    file: vars.yml
+    file: ./files/vars.yml
 
 - name: Set time zone
   timezone:
@@ -19,91 +19,104 @@
     - exiftool
 
 - user: 
-    name: harrydavis
-    password: $1$1nterrup$DMzrGjqazmuwmApH1wSIl/
-    shell: /bin/bash
+    name: "{{ item.name }}"
+    password: "{{ item.password }}"
+    shell: "{{ shell }}"
+  loop: "{{ user_acct }}"
 
 - user:
-    name: admin
-    password: $1$1nterrup$C/d4YW3G5jTCvesbRnLeo/
-    shell: /bin/bash
+    name: "{{ item.name }}"
+    password: "{{ item.password }}"
+    shell: "{{ shell }}"
+  loop: "{{ admin_acct }}"
 
-- name: Install Harry Davis home directory
+- name: Install user home directory
   file:
-    path: "/home/harrydavis/"
+    path: /home/{{ item.name }}/
     state: directory
-    owner: harrydavis
-    group: harrydavis
+    owner: "{{ item.name }}"
+    group: "{{ item.name }}"
     mode: 0755
+  loop: "{{ user_acct }}"
 
 - copy:
-    src: /tmp/scenario_support/corpfile01/home/harrydavis/
-    dest: /home/harrydavis/
-    owner: harrydavis
-    group: harrydavis
+    src: "{{ content_folder }}corpfile01/home/{{ item.name }}/"
+    dest: /home/{{ item.name }}/
+    owner: "{{ item.name }}"
+    group: "{{ item.name }}"
     mode: 0755
+  loop: "{{ user_acct }}"
 
-- name: Install Harry Davis ssh directory
+- name: Install user ssh directory
   file:
-    path: "/home/harrydavis/.ssh"
+    path: /home/{{ item.name }}/.ssh
     state: directory
-    owner: harrydavis
-    group: harrydavis
+    owner: "{{ item.name }}"
+    group: "{{ item.name }}"
     mode: 0700
+  loop: "{{ user_acct }}"
 
 - copy:
-    src: /tmp/scenario_support/corpfile01/home/harrydavis/.ssh/
-    dest: /home/harrydavis/.ssh/
-    owner: harrydavis
-    group: harrydavis
+    src: "{{ content_folder }}corpfile01/home/{{ item.name}}/.ssh/"
+    dest: /home/{{ item.name}}/.ssh/
+    owner: "{{ item.name }}"
+    group: "{{ item.name }}"
     mode: 0700
+  loop: "{{ user_acct }}"
 
 - copy:
-    src: /tmp/scenario_support/corpfile01/shares/
+    src: "{{ content_folder }}corpfile01/shares/"
     dest: /srv/samba/
 
 - name: create admin home directory
   file:
-    path: /home/admin/
+    path: /home/{{ item.name }}/
     state: directory
-    owner: admin
-    group: admin
+    owner: "{{ item.name }}"
+    group: "{{ item.name }}"
     mode: 0755
+  loop: "{{ admin_acct }}"
 
 - name: copy files to admin home
   copy:
-    src: /tmp/scenario_support/corpfile01/home/admin/
-    dest: /home/admin/
+    src: "{{ content_folder }}corpfile01/home/{{ item.name }}/"
+    dest: /home/{{ item.name }}/
+  loop: "{{ admin_acct }}"
 
 - name: Make marco script executable
   file:
-    path: /home/admin/marco
+    path: /home/{{ item.name }}/marco
     mode: +x
+  loop: "{{ admin_acct }}"
 
 - name: Make put script executable
   file:
-    path: /home/admin/ftpput
+    path: /home/{{ item.name }}/ftpput
     mode: +x
+  loop: "{{ admin_acct }}"
 
 - name: create marco cron job
   cron:
     name: Run marco
     minute: "*/5"
-    job: /home/admin/marco
+    job: /home/{{ item.name }}/marco
+  loop: "{{ admin_acct }}"
 
 - name: create ftpput cron job
   cron:
     name: Run put
     minute: "15"
     hour: "*"
-    job: /home/admin/ftpput
+    job: /home/{{ item.name }}/ftpput
+  loop: "{{ admin_acct }}"
 
 - file:
-    path: /home/harrydavis/.ssh/authorized_keys
-    owner: harrydavis
-    group: harrydavis
+    path: /home/{{ item.name }}/.ssh/authorized_keys
+    owner: "{{ item.name }}"
+    group: "{{ item.name }}"
     state: touch
     mode: 0644
+  loop: "{{ user_acct }}"
 
 - name: setup samba
   include_role:

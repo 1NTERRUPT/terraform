@@ -1,9 +1,11 @@
+variable "region"			{}
 variable "cidr" 			{}
 variable "inst_type_default"		{}
 variable "inst_type_scoreboard"		{}
 variable "inst_type_jumpbox"		{}
 variable "master_key" 			{}
-variable "region" 			{}
+variable "key_name"			{}
+variable "ctf-domain"			{}
 variable "vpc_ids" 			{ type = "map"}
 variable "cidrs" 			{ type = "map" }
 variable "internal_cidr_blocks" 	{ type = "list" }
@@ -15,14 +17,10 @@ variable "corporate" 			{ default = "corporate" }
 variable "ops" 				{ default = "ops" }
 variable "command"			{ default = "command" }
 
-provider "aws" {
-    region 			= "${var.region}"
-}
-
-data "aws_caller_identity" "current" { }
+data "aws_caller_identity" "current" {}
 
 data "aws_route53_zone" "events" {
-  name 			= "events.1nterrupt.com"
+  name 			= "${var.ctf-domain}"
 }
 
 data "aws_ami" "ubuntu16" {
@@ -291,7 +289,7 @@ resource "aws_security_group" "tools_scoreboard" {
     vpc_id 		= "${aws_vpc.control.id}"
 }
 
-resource "template_file" "cidr" {
+data "template_file" "cidr" {
   template = "$${network}/32"
   count = "${var.team_count}" 
   vars {
@@ -305,7 +303,7 @@ resource "aws_security_group_rule" "tools_scoreboard_http" {
   to_port         = 80
   protocol        = "tcp"
   count = "${var.team_count}" 
-  cidr_blocks     = ["${element(template_file.cidr.*.rendered, count.index)}"]
+  cidr_blocks     = ["${element(data.template_file.cidr.*.rendered, count.index)}"]
   security_group_id = "${aws_security_group.tools_scoreboard.id}"
 }
 
@@ -315,7 +313,7 @@ resource "aws_security_group_rule" "tools_scoreboard_https" {
   to_port         = 443
   protocol        = "tcp"
   count = "${var.team_count}" 
-  cidr_blocks     = ["${element(template_file.cidr.*.rendered, count.index)}"]
+  cidr_blocks     = ["${element(data.template_file.cidr.*.rendered, count.index)}"]
   security_group_id = "${aws_security_group.tools_scoreboard.id}"
 }
 
@@ -351,7 +349,7 @@ resource "aws_instance" "backstage" {
     ami 		= "${data.aws_ami.ubuntu16.id}"
     instance_type 	= "${var.inst_type_default}"
     subnet_id 		= "${aws_subnet.control.id}"
-    key_name 		= "utilitel-tools"
+    key_name 		= "${var.key_name}"
     security_groups 	= ["${aws_security_group.public_ssh.id}", "${aws_security_group.all_internal.id}"]
     user_data 		= "${data.template_file.script.rendered}"
     iam_instance_profile = "${aws_iam_instance_profile.backstage_instance_profile.id}"
@@ -417,7 +415,7 @@ resource "aws_instance" "scoreboard" {
     ami 			= "${data.aws_ami.ubuntu16.id}"
     instance_type 		= "${var.inst_type_scoreboard}"
     subnet_id 			= "${aws_subnet.control.id}"
-    key_name 			= "utilitel-tools"
+    key_name 			= "${var.key_name}"
     security_groups 		= ["${aws_security_group.tools_scoreboard.id}", "${aws_security_group.public_ssh.id}", "${aws_security_group.all_internal.id}"]
     user_data 			= "${data.template_file.update_script.rendered}"
 

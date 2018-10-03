@@ -1,5 +1,6 @@
+variable "region"		{}
 variable "team_count" 		{}
-variable "region" 		{}
+variable "ctf-domain"		{}
 variable "cidrs" 		{ type = "map" }
 variable "cfg_bucket" 		{}
 variable "inst_type_default"	{}
@@ -16,11 +17,7 @@ variable "image16" 		{ default = ["ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd
 
 
 data "aws_route53_zone" "events" {
-  name 			= "events.1nterrupt.com"
-}
-
-provider "aws" {
-    region 		= "${var.region}"
+  name 			= "${var.ctf-domain}"
 }
 
 data "terraform_remote_state" "utilitel_network" {
@@ -76,6 +73,7 @@ data "aws_ami" "ubuntu16" {
 
 module "public" {
   source 		= "./public"
+  ctf-domain		= "${var.ctf-domain}"
   team_count 		= "${var.team_count}"
   ami_id 		= "${data.aws_ami.ubuntu16.id}"
   vpc_ids 		= "${module.network.vpc_ids[var.public]}"
