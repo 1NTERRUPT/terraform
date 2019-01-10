@@ -2,36 +2,36 @@
 - name: Set the host
   hostname:
     name: backstage
-  become: yes
+  become: true
 
-- name: Get variables
+- name: Get global variables
   include_vars:
-    file: ./files/vars.yml
-
-- name: Update time zone
-  timezone:
-    name: "{{ timezone }}"
-  become: yes
+    file: ./global_vars/common.yml
+  
+- name: Get host variables
+  include_vars:
+    file: ../host_vars/vars.yml
 
 - name: Setup ssh credentials
   aws_s3:
     bucket: "{{ s3_bucket_keys }}"
     object: keys/{{ key_file }}
-    dest: /home/ubuntu/.ssh/id_rsa
+    dest: /home/{{ installer_acct_name }}/.ssh/id_rsa
     mode: get
 
-- file:
-    path: /home/ubuntu/.ssh/id_rsa
-    owner: ubuntu
-    group: ubuntu
+- name: Set ssh key permissions
+  file:
+    path: /home/{{ installer_acct_name }}/.ssh/id_rsa
+    owner: "{{ installer_acct_name }}"
+    group: "{{ installer_acct_name }}"
     mode: 0700
 
 - name: Create scenario folder
   file:
     path: "{{ content_folder }}"
-    state: directory 
-    owner: ubuntu 
-    group: ubuntu 
+    state: directory
+    owner: "{{ installer_acct_name }}"
+    group: "{{ installer_acct_name }}"
 
 - name: Download scenario support files
   command: "aws s3 cp --region={{ aws_region }} --recursive s3://{{ s3_bucket_content }} {{ content_folder }}"

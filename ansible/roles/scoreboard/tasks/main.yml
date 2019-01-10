@@ -1,37 +1,57 @@
 ---
+- name: Get the global variables
+  include_vars:
+    file: ./global_vars/common.yml
+
+- name: Get the host variables
+  include_vars:
+    file: "{{ content_folder }}scoreboard/host_vars/vars.yml"
+
+- name: Get the sql variables
+  include_vars:
+    file: "{{ content_folder }}scoreboard/host_vars/sql_vars.yml"
+
 - name: Set the hostname
   hostname:
-    name: scoreboard
+    name: "{{ hostname }}"
   become: yes
-
-- name: Get variables
-  include_vars:
-    file: ./files/vars.yml
-
-- name: Set time zone
-  timezone:
-    name: "{{ timezone }}"
 
 - name: Clone FacebookCTF git repository
   git:
     repo: 'https://github.com/facebook/fbctf.git'
-    dest: /var/www/fbctf
+    dest: "{{ scrbrd_install_dir }}"
     clone: yes
     update: no
 
 - name: Paste customized language php file
   copy:
     src: "{{ content_folder }}scoreboard/lang_en.php"
-    dest: /var/www/fbctf/src/language
+    dest: "{{ scrbrd_install_dir }}/src/language"
 
 - name: Paste customized controller php file
   copy:
     src: "{{ content_folder }}scoreboard/IndexController.php"
-    dest: /var/www/fbctf/src/controllers
+    dest: "{{ scrbrd_install_dir }}/src/controllers"
 
-- name: Past the customized provision script
-  copy:
-    src: "{{ content_folder }}scoreboard/provision.sh"
-    dest: /var/www/fbctf/extra/
+- name: Paste the customized provision script
+  template:
+    src: "{{ content_folder }}scoreboard/templates/provision.sh"
+    dest: "{{ scrbrd_install_dir }}/extra/"
     mode: "+x"
 
+- name: Run the provision script
+  command: "{{ scrbrd_install_dir }}/extra/provision.sh"
+  become: true
+
+- name: Paste the scoreboard backup
+  copy:
+    src: "{{ content_folder }}scoreboard/backups/fbctf-backup.sql.gz"
+    dest: "{{ scrbrd_install_dir }}"
+
+- name: Restore the scoreboard backup
+  mysql_db:
+    login_user: "{{ scrbrd_db_acct_name }}"
+    login_password: "{{ scrbrd_db_login_pwd_clear }}"
+    name: "{{ scrbrd_db_name }}"
+    state: import
+    target: "{{ scrbrd_install_dir }}/fbctf-backup.sql.gz"

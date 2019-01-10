@@ -1,0 +1,11 @@
+# Set the AWS bucket name containing the content and download location on the backstage server
+aws_region: us-east-1
+s3_bucket_content: 1nterrupt-scenario-support
+
+# Set the AWS bucket name that contains the keys used by Ansible and the key name
+# Do not change this value
+s3_bucket_keys: 1nterrupt-util
+
+# Enter the name of the .pem file including the .pem file extension. This should be the same
+# value as in the Terraform variables file.
+key_file: utilitel-tools.pem

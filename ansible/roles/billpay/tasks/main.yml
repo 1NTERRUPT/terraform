@@ -1,0 +1,130 @@
+---
+- name: Get global variables
+  include_vars:
+    file: ./global_vars/common.yml
+
+- name: Get SQL variables
+  include_vars:
+    file: "{{ content_folder }}billpay/host_vars/sql_vars.yml"
+
+- name: Get host variables
+  include_vars:
+    file: "{{ content_folder }}billpay/host_vars/vars.yml"
+
+- name: Set the host name
+  hostname:
+    name: "{{ hostname }}"
+  become: true
+
+# ===============
+# Manage packages
+# ===============
+
+- name: Add Ondrej/php repository
+  apt_repository:
+    repo: ppa:ondrej/php
+
+- name: Install packages
+  apt:
+    name:
+      - php5.6
+      - php5.6-mbstring
+      - php5.6-mcrypt
+      - php5.6-mysql
+      - mysql-server
+      - mysql-client
+      - python-mysqldb
+    update_cache: yes
+    state: latest
+
+- name: Set MySQL root password before installing
+  debconf:
+    name: 'mysql-server'
+    question: 'mysql-server/root_password'
+    value: "{{ web_app_acct_pwd_clear }}"
+    vtype: 'password'
+
+- name: Confirm MySQL root password before installing
+  debconf:
+    name: 'mysql-server'
+    question: 'mysql-server/root_password_again'
+    value: "{{ web_app_acct_pwd_clear }}"
+    vtype: 'password'
+
+- name: Set root privileges
+  mysql_user:
+    login_user: "{{ web_app_acct_name }}"
+    login_password: "{{ web_app_acct_pwd_clear }}"
+    user: "{{ web_app_acct_name }} priv=*.*:ALL,GRANT"
+    state: present
+
+- name: Create the php account and assign privileges
+  mysql_user:
+    name: "{{ php_acct_name }}"
+    password: "{{ php_acct_pwd_clear }}"
+    priv: "*.*:ALL,GRANT"
+    state: present
+
+- name: Create the www-data user
+  user:
+    name: www-data
+    group: www-data
+  become: yes
+
+- name: Copy index.php to Apache root
+  template:
+    src: "{{ content_folder }}billpay/templates/index.php"
+    dest: /var/www/html
+  become: true
+
+- name: Remove index.html
+  file:
+    path: /var/www/html/index.html
+    state: absent
+  become: true
+
+- name: Start Apache service
+  service:
+    name: apache2
+    state: started
+
+- name: Enable php5.6 within Apache
+  command: a2enmod php5.6
+  become: true
+
+# ==========================
+# Manage the webapp database
+# ==========================
+
+- name: Create the database
+  mysql_db:
+    name: "{{ web_app_db_name }}"
+    state: present
+    login_user: "{{ web_app_acct_name }}"
+    login_password: "{{ web_app_acct_pwd_clear }}"
+
+- name: Copy the sql script
+  template:
+    src: "{{ content_folder }}billpay/templates/webapp.sql"
+    dest: /home/{{ installer_acct_name }}
+
+- name: Import webapp SQL script
+  mysql_db:
+    login_user: "{{ web_app_acct_name }}"
+    login_password: "{{ web_app_acct_pwd_clear }}"
+    name: "{{ web_app_db_name }}"
+    state: import
+    target: /home/{{ installer_acct_name }}/webapp.sql
+
+# =============
+# Manage Apache
+# =============
+
+- name: Set Apache to start on boot
+  command: update-rc.d apache2 defaults
+  become: true
+
+- name: Restart Apache service
+  service:
+    name: apache2
+    state: restarted

@@ -1,0 +1,106 @@
+# Set the timezone for all of the instances
+timezone: America/New_York
+
+# This is the folder to which the S3 files are pulled into
+# and from which they are pulled by different playbooks
+content_folder: /tmp/scenario_support/
+
+# Set the number of "player" accounts on the jump box
+player_count: 5
+
+# Scenario variables
+
+# This will vary between names like "vagrant" and "ubuntu" depending on the
+# environment in which this is run.
+installer_acct_name: ubuntu
+
+company_name: "Muni Gas & Power"
+company_nick_name: MGP
+company_domain: mgp.test
+
+# Create the user accounts
+# All of the passwords for the EC2 instances need to be encoded. Some of these may be changed
+# and others need to remain the same.
+
+# To create a password, run the following command:
+#
+# python3 -c 'import crypt; print(crypt.crypt("password", "$1$SomeSalt$"))'
+#
+# It's better to run this on a Linux instance, rather than on a Mac, if possible.
+# For some reason, running the command on a Mac produces a shorter result,
+# and without the salt that is required. When Ansible runs, it throws an error,
+# though, the playbook will continue to run.
+#
+# Be sure to include the "$1$SomeSalt$" value as in the examples below.
+
+# To use Ansible vault to protect information, use the following command:
+# "ansible-vault encrypt_string 'password' --name 'variable_name'"
+
+admin_acct_name: admin
+admin_acct_pw_clear: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          33636165626330333634303732306663636636396161393036376139343763306532623234623163
+          3563303565313761626633373762393765623534326135340a623461336533373332363638643633
+          64303535386163626164666364613162393233363130366436623632366537353138333037383262
+          3736383331636162320a353638353132303735303633653837366330656639373638323238303231
+          3832
+admin_acct_pw_encrypted: $1$1nterrup$C/d4YW3G5jTCvesbRnLeo/
+
+user_acct_first_name: Harold
+user_acct_nick_name: Harry
+user_acct_last_name: Davis
+user_acct_name: harrydavis
+user_acct_pw_clear: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          38353663646333346163326539653736643437323633633035343832323462663964346264313762
+          3961633833313435616234356530393764346561383033340a666136303437336232323761393065
+          31353861363064373862333032306438376537396437343963346138313035316363303336336364
+          6432663063323838330a326434336330336262383537353765373338666461623734393637396138
+          6362
+user_acct_pw_encrypted: $1$1nterrup$DMzrGjqazmuwmApH1wSIl/ # Do not change this value
+
+IT_acct_first_name: Janet
+IT_acct_nick_name: JT
+IT_acct_last_name: Thomas
+IT_acct_name: janetthomas
+IT_acct_pw_clear: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          63653832653239363562656231303064656465393431666533646565313163656362616633343337
+          6237346139326565333932653230373632373766376366360a313764663764313531316430656132
+          37363730636665316237613836643634343531326333653463353566323138393364343264656665
+          6664343563343964360a376537653237373534666432353164363439346436613432313333343837
+          6238
+IT_acct_pw_encrypted: $1$1nterrup$.fHaTk8g1v5m2LCFwldWK.
+IT_acct_title: IT Support, Level 2
+IT_acct_dept: Information Technology
+
+mgr_acct_first_name: Richard
+mgr_acct_nick_name: Rick
+mgr_acct_last_name: Harrison
+mgr_acct_name: rickharrison
+mgr_acct_pw_clear: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          37663661303834646231623530636431353935666334396563633163636136383337363666343661
+          3531386637613733643062346164353038373935393533630a376166316532373431623465316264
+          39313738306132623164633438313463303735356534623135646331643233353631393363643138
+          6461373038623731350a613833346336383162313737363331303537643738396237313437613261
+          6262
+mgr_acct_pw_encrypted: $1$1nterrup$/yBi.0Laf.C/0VTMtubeD/
+mgr_acct_title: Manager
+mgr_acct_dept: Operations
+
+ops_acct_name: ops
+ops_acct_pw_clear: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          66626563643035643237366532643665353433313365383062356564303666353264336361356562
+          3634613661323330323161326565376636613661383765630a623861326433333165613431363230
+          36326366343166633566653836313266623563613166323062396336306332383262643136376631
+          6564306233383538340a626166656233666338616663633234376338356532303733623366633966
+          6461
+ops_acct_pw_encrytped: $1$1nterrup$uSpFgWnBpgRAzEK0Yp0HA1 # Do not change this value
+
+player_name_format: player%02d
+player_pwd: $1$1nTerrup$3Aww4eiS9o.g/HP4ab3C6.
+
+# Set the shell for all user accounts
+users_shell: /bin/bash

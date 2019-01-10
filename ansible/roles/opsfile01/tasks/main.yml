@@ -1,118 +1,100 @@
 ---
-- name: Set the hostname
-  hostname:
-    name: opsfile01
-  become: yes
-
 - name: Get variables
   include_vars:
-    file: ./files/vars.yml
+    file: ./global_vars/common.yml
 
-- name: Set time zone
-  timezone:
-    name: "{{ timezone }}"
+- name: Get host variables
+  include_vars:
+    file: "{{ content_folder }}opsfile01/host_vars/vars.yml"
 
-- name: Install Packages
-  apt: name={{ item }} update_cache=yes state=latest
-  with_items:
-    - nmap
-    - exiftool
-
-- user: 
-    name: "{{ item.name }}"
-    password: "{{ item.password }}"
-    shell: "{{ shell }}"
-  loop: "{{ user_acct }}"
+- name: Set the hostname
+  hostname:
+    name: "{{ hostname }}"
+  become: yes
 
 - user:
-    name: "{{ item.name }}"
-    password: "{{ item.password }}"
-    shell: "{{ shell }}"
-  loop: "{{ ops_acct }}"
+    name: "{{ user_acct_name }}"
+    password: "{{ user_acct_pw_encrypted }}"
+    shell: "{{ users_shell }}"
+
+- user:
+    name: "{{ ops_acct_name }}"
+    password: "{{ ops_acct_pw_encrytped }}"
+    shell: "{{ users_shell }}"
 
 - name: Install user home directory
   file:
-    path: /home/{{ item.name }}/
+    path: /home/{{ user_acct_name }}/
     state: directory
-    owner: "{{ item.name }}"
-    group: "{{ item.name }}"
+    owner: "{{ user_acct_name }}"
+    group: "{{ user_acct_name }}"
     mode: 0755
-  loop: "{{ user_acct }}"
 
 - copy:
-    src: "{{ content_folder }}opsfile01/home/{{ item.name }}/"
-    dest: /home/{{ item.name }}/
-  loop: "{{ user_acct }}"
+    src: "{{ content_folder }}opsfile01/home/{{ user_acct_name }}/"
+    dest: /home/{{ user_acct_name }}/
 
 - name: Install user ssh directory
   file:
-    path: /home/{{ item.name }}/.ssh
+    path: /home/{{ user_acct_name }}/.ssh
     state: directory
-    owner: "{{ item.name }}"
-    group: "{{ item.name }}"
+    owner: "{{ user_acct_name }}"
+    group: "{{ user_acct_name }}"
     mode: 0700
-  loop: "{{ user_acct }}"
 
 - copy:
-    src: "{{ content_folder }}opsfile01/home/{{ item.name }}/.ssh/"
-    dest: /home/{{ item.name }}/.ssh/
-    owner: "{{ item.name }}"
-    group: "{{ item.name }}"
+    src: "{{ content_folder }}opsfile01/home/{{ user_acct_name }}/.ssh/"
+    dest: /home/{{ user_acct_name }}/.ssh/
+    owner: "{{ user_acct_name }}"
+    group: "{{ user_acct_name }}"
     mode: 0700
-  loop: "{{ user_acct }}"
 
 - name: create ops home directory
   file:
-    path: /home/ops
+    path: /home/{{ ops_acct_name }}
     state: directory
-    owner: ops
-    group: ops
+    owner: "{{ ops_acct_name }}"
+    group: "{{ ops_acct_name }}"
     mode: 0755
 
 - name: copy files to ops home
   copy:
-    src: "{{ content_folder }}opsfile01/home/{{ item.name }}/"
-    dest: /home/{{ item.name }}/
-  loop: "{{ ops_acct }}"
+    src: "{{ content_folder }}opsfile01/home/{{ ops_acct_name }}/"
+    dest: /home/{{ ops_acct_name }}/
 
 - name: Make marco script executable
   file:
-    path: /home/{{ item.name }}/marco
+    path: /home/{{ ops_acct_name }}/marco
     mode: +x
-  loop: "{{ ops_acct }}"
 
 - name: Make put script executable
   file:
-    path: /home/{{ item.name }}/ftpput
+    path: /home/{{ ops_acct_name }}/ftpput
     mode: +x
-  loop: "{{ ops_acct }}"
 
 - name: Create marco cron job
   cron:
     name: Run marco
     minute: "*/10"
-    job: /home/{{ item.name }}/marco
-  loop: "{{ ops_acct }}"
+    job: /home/{{ ops_acct_name }}/marco
 
 - name: Create put cron job
   cron:
     name: Run ftpput
     minute: "12"
     hour: "*"
-    job: /home/{{ item.name }}/ftpput
-  loop: "{{ ops_acct }}"
+    job: /home/{{ ops_acct_name }}/ftpput
 
 - copy:
     src: "{{ content_folder }}opsfile01/shares/"
     dest: /srv/samba/
 
 - file:
-    path: /home/{{ item.name }}/.ssh/authorized_keys
-    owner: "{{ item.name }}"
-    group: "{{ item.name }}"
+    path: /home/{{ user_acct_name }}/.ssh/authorized_keys
+    owner: "{{ user_acct_name }}"
+    group: "{{ user_acct_name }}"
     state: touch
     mode: 0644
-  loop: "{{ user_acct }}"
 
 - copy:
     src: "{{ content_folder }}opsfile01/shares/"
@@ -137,16 +119,16 @@
 
     samba_shares_root: /srv/samba
     samba_shares:
- 
-      - name: ops
+
+      - name: "{{ ops_acct_name }}"
         comment: "private fileshare"
         public: no
         guest_ok: no
         read_only: yes
-        valid_users: ops
-    samba_users: 
+        valid_users: "{{ ops_acct_name }}"
+    samba_users:
       -
-        name: ops
+        name: "{{ ops_acct_name }}"
         password: !vault |
                   $ANSIBLE_VAULT;1.1;AES256
                   39343736323966643731613464316335653430383233616163343533643130663530383937363964

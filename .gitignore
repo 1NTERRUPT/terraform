@@ -1,9 +1,15 @@
+# Terraform files
 .terraform
-todo.md
 terraform.tfvars
 terraform.tfstate
 terraform.tfstate.backup
+variables.tf
 
 # Ansible files
+*.retry
 
-./ansible/files/vars.yml
+# General files
+todo.md
+*.swp
+*.DS_Store
+backstagessh.sh

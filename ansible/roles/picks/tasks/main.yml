@@ -1,39 +1,40 @@
 ---
-- name: Set the hostname
-  hostname:
-    name: picks
-  become: yes
-
 - name: Get variables
   include_vars:
-    file: ./files/vars.yml
+    file: ./global_vars/common.yml
 
-- name: Set time zone
-  timezone:
-    name: "{{ timezone }}"
+- name: Get host variables
+  include_vars:
+    file: "{{ content_folder }}picks/host_vars/vars.yml"
+
+- name: Set the hostname
+  hostname:
+    name: "{{ hostname }}"
+  become: yes
 
 - name: Install Packages
-  apt: name={{ item }} update_cache=yes state=latest
-  with_items:
-    - build-essential
-    - npm
-    - nodejs-legacy
-    - mcrypt
-    - nginx
-    - curl
-    - vsftpd
+  apt:
+    name:
+      - build-essential
+      - npm
+      - nodejs-legacy
+      - mcrypt
+      - nginx
+      - vsftpd
+    update_cache: true
+    state: latest
 
 - copy:
     src: "{{ content_folder }}picks/www/"
     dest: /srv/picks/
-    owner: ubuntu
-    group: ubuntu
+    owner: "{{ installer_acct_name }}"
+    group: "{{ installer_acct_name }}"
 
 - copy:
     src: "{{ content_folder }}picks/ftp/"
     dest: /srv/ftp/
-    owner: ubuntu
-    group: ubuntu
+    owner: "{{ installer_acct_name }}"
+    group: "{{ installer_acct_name }}"
 
 - name: Create anonymous ftp user
   user:
@@ -54,15 +55,13 @@
     owner: root
     group: root
 
-- user: 
-    name: "{{ item.name }}"
-    password: "{{ item.password }}"
-  loop: "{{ user_acct }}"
+- user:
+    name: "{{ user_acct_name }}"
+    password: "{{ user_acct_pw_encrypted }}"
 
 - user:
-    name: "{{ item.name }}"
-    password: "{{ item.password }}"
-  loop: "{{ admin_acct }}"
+    name: "{{ admin_acct_name }}"
+    password: "{{ admin_acct_pw_encrypted }}"
 
 - name: Install web server
   npm:
@@ -70,7 +69,7 @@
   register: npm_finished
 
 - name: disable default nginx site
-  file: 
+  file:
     path: /etc/nginx/sites-enabled/default
     state: absent
   become: yes

@@ -2,60 +2,99 @@
 - hosts: localhost
   connection: local
   gather_facts: False
-  roles: 
-    - backstage
-
-- hosts: tag_Name_scoreboard
-  become: true
   roles:
-    - scoreboard
-    - { role: fqdn, fqdn: "scoreboard.events.1nterrupt.com", hostname: "scoreboard" }
+    - backstage
 
 - hosts: tag_Name_picks
   become: true
   roles:
     - picks
-    - { role: fqdn, fqdn: "picks.fantcpicks.net", hostname: "picks" }
 
-- hosts: tag_Name_corpblog01
+- hosts: tag_Name_billpay
   become: true
   roles:
-    - corpblog01
-    - { role: fqdn, fqdn: "corpblog01.utilitel.test", hostname: "corpblog01" }
+    - billpay
 
+- hosts: tag_Name_blogserver
+  become: true
+  roles:
+    - blogserver
 
 - hosts: tag_Name_corpfile01
   become: true
-  roles: 
+  roles:
     - corpfile01
-    - { role: fqdn, fqdn: "corpfile01.utilitel.test", hostname: "corpfile01" }
 
 - hosts: tag_Name_wikiserver
   become: true
   roles:
     - wikiserver
-    - { role: fqdn, fqdn: "wikiserver.utilitel.test", hostname: "wikiserver" }
 
-- hosts: tag_Name_tools
+- hosts: tag_Name_jumpbox
   become: true
   roles:
-    - tools
-    - { role: fqdn, fqdn: "tools.utilitel.test", hostname: "tools" }
+    - jumpbox
 
 - hosts: tag_Name_pubfile01
   become: true
   roles:
     - pubfile01
-    - { role: fqdn, fqdn: "pubfile01.utilitel.test", hostname: "pubfile01" }
 
 - hosts: tag_Name_opsfile01
   become: true
   roles:
     - opsfile01
-    - { role: fqdn, fqdn: "opsfile01.utilitel.test", hostname: "opsfile01" }
 
-- hosts: tag_Name_pumpserver
+- hosts: tag_Name_mailserver
   become: true
   roles:
-    - pumpserver
-    - { role: fqdn, fqdn: "pumpserver.utilitel.test", hostname: "pumpserver" }
+    - mailserver
+
+- hosts: tag_Name_scoreboard
+  become: true
+  roles:
+    - scoreboard
+
+- hosts: all
+  tasks:
+
+  - name: Set time zone
+    timezone:
+      name: "{{ timezone }}"
+    become: true
+
+  - name: Get IPs
+    setup:
+      filter:
+        - default_ipv4
+        - hostname
+
+  - debug:
+      msg: "IP address is {{ ansible_default_ipv4.address }} and the host name is {{ ansible_hostname }}"
+
+  - name: Write values to file
+    local_action:
+      copy content="\n{{ ansible_default_ipv4.address }}\t{{ ansible_hostname}}" dest=map_{{ ansible_hostname }}.txt
+
+  - name: Install common packages
+    apt:
+      name:
+        - htop
+        - traceroute
+        - whois
+        - nmap
+        - unzip
+        - curl
+        - exiftool
+        - wireshark
+      update_cache: true
+      state: latest
+    become: true
+
+  - name: Update all of the software packages
+    apt:
+      force_apt_get: yes
+      upgrade: full
+      autoclean: yes
+      autoremove: yes
+    become: true

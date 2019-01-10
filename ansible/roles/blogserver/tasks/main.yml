@@ -1,23 +1,38 @@
 ---
-- name: Get the global variables
+- name: Get global variables
   include_vars:
     file: ./global_vars/common.yml
 
-- name: Get the host variables
+- name: Get host variables
   include_vars:
-    file: "{{ content_folder }}/wikiserver/host_vars/vars.yml"
+    file: "{{ content_folder }}blogserver/host_vars/vars.yml"
 
 - name: Set the hostname
   hostname:
     name: "{{ hostname }}"
   become: yes
 
-- name: Copy static content
+- name: Copy static app files
   copy:
-    src: "{{ content_folder }}/wikiserver/"
-    dest: "{{ wiki_directory }}"
+    src: "{{ content_folder }}blogserver/"
+    dest: "{{ blog_directory }}"
     owner: "{{ installer_acct_name }}"
     group: "{{ installer_acct_name }}"
+
+- name: Copy static images
+  copy:
+    src: "{{ content_folder }}blogserver/images"
+    dest: "{{ blog_directory }}/images/"
+    owner: "{{ installer_acct_name }}"
+    group: "{{ installer_acct_name }}"
+
+- name: Copy dynamic content
+  template:
+    src: "{{ item }}"
+    dest: "{{ blog_directory }}/content/"
+    owner: "{{ installer_acct_name }}"
+    group: "{{ installer_acct_name }}"
+  with_fileglob: "/tmp/scenario_support/blogserver/templates/*.md"
 
 - name: Install Packages
   apt:
@@ -25,6 +40,7 @@
       - build-essential
       - npm
       - nodejs-legacy
+      - git
       - mcrypt
       - nginx
     update_cache: true
@@ -39,30 +55,24 @@
 - name: Install Hazel wiki
   npm:
     name: hazel-wiki
-    path: "{{ wiki_directory }}"
+    path: "{{ blog_directory }}"
   register: npm_finished
-
-- name: Copy dynamic content
-  template:
-    src: "{{ item }}"
-    dest: "{{ wiki_directory }}/content/"
-  with_fileglob: "/tmp/scenario_support/wikiserver/templates/*.md"
 
 - name: Stop APP
   command: pm2 stop server.js --name app
   args:
-    chdir: "{{ wiki_directory }}"
-  become: true
+    chdir: "{{ blog_directory }}"
   ignore_errors: yes
+  become: true
   when: npm_finished.changed
   register: app_stopped
 
 - name: Start APP
   command: pm2 start server.js --name app
   args:
-    chdir: "{{ wiki_directory }}"
-  become: true
+    chdir: "{{ blog_directory }}"
   ignore_errors: yes
+  become: true
   when: app_stopped.changed
 
 - name: disable default nginx site
@@ -73,7 +83,7 @@
 
 - name: Copy nginx template
   template:
-    src: "{{ content_folder }}wikiserver/templates/nginx.j2"
+    src: "{{ content_folder }}blogserver/templates/nginx.j2"
     dest: /etc/nginx/sites-enabled/{{ hostname }}
 
 - service:

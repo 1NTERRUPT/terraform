@@ -1,0 +1,104 @@
+---
+- name: Get global variables
+  include_vars:
+    file: ./global_vars/common.yml
+
+- name: Get host variables
+  include_vars:
+    file: "{{ content_folder}}/mailserver/host_vars/vars.yml"
+
+- name: Get sql variables
+  include_vars:
+    file: "{{ content_folder}}/mailserver/host_vars/sql_vars.yml"
+
+- name: Set host name
+  hostname:
+    name: "{{ hostname }}"
+  become: true
+
+- name: Download the iRedMail zip file
+  get_url:
+    url: https://bitbucket.org/zhb/iredmail/downloads/iRedMail-0.9.9.tar.bz2
+    dest: /srv/mail
+
+- name: Unzip the zip file
+  unarchive:
+    src: /srv/mail
+    dest: /srv/
+    remote_src: yes
+
+- name: Copy config file to mail directory
+  template:
+    src: "{{ content_folder}}/mailserver/templates/config"
+    dest: /srv/{{ mail_dir }}
+
+- name: Copy hosts file
+  template:
+    src: "{{ content_folder}}/mailserver/templates/hosts"
+    dest: /etc/hosts
+  become: yes
+
+- name: Install iRedMail
+  shell: "{{ script }}"
+  args:
+    chdir: /srv/{{ mail_dir }}
+  become: yes
+
+# Create the email accounts
+
+- name: Create sql files for the mail accounts
+  shell: "bash create_mail_user_SQL.sh {{ item.name }}@{{ company_domain }} {{ item.password }} > {{ item.name }}"
+  args:
+    chdir: /srv/{{ mail_dir }}/tools/
+  become: yes
+  loop: "{{ mail_acct }}"
+
+- name: Create the mail accounts from the sql files
+  shell: "mysql -u{{ mail_db_acct_name }} -p{{ mail_db_acct_pw_clear }} -D {{ mail_db_name }} < {{ item.name }}"
+  args:
+    chdir: /srv/{{ mail_dir }}/tools/
+  become: true
+  loop: "{{ mail_acct }}"
+  ignore_errors: true
+
+# Copy the message content the proper folders
+- name: Copy Contacts file(s) to {{ installer_acct_name }} home directory
+  template:
+    src: "{{ content_folder}}/mailserver/templates/contacts.sql"
+    dest: /home/{{ installer_acct_name }}/
+    owner: "{{ installer_acct_name }}"
+    group: "{{ installer_acct_name }}"
+
+- name: Copy email files to {{ installer_acct_name }} home directory
+  template:
+    src: "{{ item }}"
+    dest: /home/{{ installer_acct_name }}/
+    owner: "{{ installer_acct_name }}"
+    group: "{{ installer_acct_name }}"
+  with_fileglob: "/tmp/scenario_support/mailserver/templates/*.eml"
+
+# The server needs a reboot before the messages can be imported and the services
+# are up
+- name: Reboot the email server
+  reboot:
+    reboot_timeout: 3600
+  become: true
+
+- name: Import emails for {{ user_acct_name }}
+  shell: "./msgimport.sh -h localhost -u {{ user_acct_name }}@{{ company_domain }} -p {{ user_acct_pw_clear }} -m INBOX -f /home/{{ installer_acct_name }}/ITmessage.eml"
+  args:
+    chdir: /opt/www/roundcubemail/bin/
+  become: true
+
+- name: Import emails for {{ user_acct_name }}
+  shell: "./msgimport.sh -h localhost -u {{ user_acct_name }}@{{ company_domain }} -p {{ user_acct_pw_clear }} -m INBOX -f /home/{{ installer_acct_name }}/managerMessage.eml"
+  args:
+    chdir: /opt/www/roundcubemail/bin/
+  become: true
+
+- name: Import the contacts for {{ user_acct_name }}
+  shell: "mysql -u{{ mail_db_acct_name }} -p{{ mail_db_acct_pw_clear }} -D {{ contacts_db_name }} < contacts.sql"
+  args:
+    chdir: /home/{{ installer_acct_name }}/
+  become: true
+  ignore_errors: true

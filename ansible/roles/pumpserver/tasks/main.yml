@@ -5,47 +5,51 @@
 
 - name: Get variables
   include_vars:
-    file: ./files/vars.yml
+    file: ./global_vars/common.yml
 
-- name: Set time zone
-  timezone:
-    name: "{{ timezone }}"
+- name: Get host variables
+  include_vars:
+    file: "{{ content_folder }}pumpserver/host_vars/vars.yml"
+
+- name: Set the hostname
+  hostname:
+    name: "{{ hostname }}"
+  become: yes
 
 - name: Setup server permissions
   file:
     path: /srv/pumpserver/
     state: directory
-    owner: ubuntu
-    group: ubuntu
+    owner: "{{ installer_acct_name }}"
+    group: "{{ installer_acct_name }}"
     recurse: yes
 
 - name: Install Packages
-  apt: name={{ item }} update_cache=yes state=latest
-  with_items:
-    - build-essential
-    - npm
-    - nodejs-legacy
-    - mcrypt
-    - nginx
-    - curl
-    - ruby2.4
-    - ruby2.4-dev
-    - ruby-switch
-    - sqlite3 
-    - libsqlite3-dev
-    - bsdgames
+  apt:
+    name:
+      - build-essential
+      - npm
+      - nodejs-legacy
+      - mcrypt
+      - nginx
+      - ruby2.4
+      - ruby2.4-dev
+      - ruby-switch
+      - sqlite3
+      - libsqlite3-dev
+    update_cache: true
+    state: latest
 
 - name: Set Ruby 2.4 as default
   command: ruby-switch --set ruby2.4
   become: yes
 
-- apt: name=ruby-bundler update_cache=yes state=latest force=yes
-  become: yes
-
-- name: Install Bundler
-  gem: name=bundler state=latest
-  user_install: no
-  executable: yes
+- name: Install the Ruby bundler
+  apt:
+    name: ruby-bundler
+    update_cache: true
+    state: latest
+    force: true
   become: yes
 
 - name: Really install bundler
@@ -79,7 +83,7 @@
   become: no
 
 - name: disable default nginx site
-  file: 
+  file:
     path: /etc/nginx/sites-enabled/default
     state: absent
   become: yes
@@ -103,49 +107,42 @@
 
 - name: Create generic ops user
   user:
-    name: "{{ item.name }}"
-    password: "{{ item.password }}"
-  loop: "{{ ops_acct }}"
+    name: "{{ ops_acct_name }}"
+    password: "{{ ops_acct_pw_encrytped }}"
 
 - name: Create ops user home directory
   file:
-    path: /home/{{ item.name }}/
+    path: /home/{{ ops_acct_name }}/
     state: directory
-    owner: "{{ item.name }}"
-    group: "{{ item.name }}"
+    owner: "{{ ops_acct_name }}"
+    group: "{{ ops_acct_name }}"
     mode: 0755
-  loop: "{{ ops_acct }}"
 
 - name: Copy content to ops user home directory
   copy:
-    src: "{{ content_folder }}pumpshmi01/home/{{ item.name }}/"
-    dest: /home/{{ item.name }}/
-  loop: "{{ ops_acct }}"
+    src: "{{ content_folder }}pumpshmi01/home/{{ ops_acct_name }}/"
+    dest: /home/{{ ops_acct_name }}/
 
 - name: Make marco script executable
   file:
-    path: /home/{{ item.name }}/marco
+    path: /home/{{ ops_acct_name }}/marco
     mode: +x
-  loop: "{{ ops_acct }}"
 
 - name: Make ftp script executable
   file:
-    path: /home/{{ item.name }}/ftpput
+    path: /home/{{ ops_acct_name }}/ftpput
     mode: +x
-  loop: "{{ ops_acct }}"
 
 - name: Create marco cron job
   cron:
     name: Run marco
     minute: "*/1"
     hour: "*"
-    job: /home/{{ item.name }}/marco
-  loop: "{{ ops_acct }}"
+    job: /home/{{ ops_acct_name }}/marco
 
 - name: Create ftp cron job
   cron:
     name: Run ftpput
     minute: "10"
     hour: "*"
-    job: /home/{{ ops_acct }}/ftpput
-
+    job: /home/{{ ops_acct_name }}/ftpput
