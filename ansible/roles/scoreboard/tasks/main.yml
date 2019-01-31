@@ -1,8 +1,4 @@
 ---
-- name: Get the global variables
-  include_vars:
-    file: ./global_vars/common.yml
-
 - name: Get the host variables
   include_vars:
     file: "{{ content_folder }}scoreboard/host_vars/vars.yml"
@@ -23,21 +19,10 @@
     clone: yes
     update: no
 
-- name: Paste customized language php file
-  copy:
-    src: "{{ content_folder }}scoreboard/lang_en.php"
-    dest: "{{ scrbrd_install_dir }}/src/language"
-
-- name: Paste customized controller php file
-  copy:
-    src: "{{ content_folder }}scoreboard/IndexController.php"
-    dest: "{{ scrbrd_install_dir }}/src/controllers"
-
 - name: Paste the customized provision script
   template:
     src: "{{ content_folder }}scoreboard/templates/provision.sh"
     dest: "{{ scrbrd_install_dir }}/extra/"
-    mode: "+x"
 
 - name: Run the provision script
   command: "{{ scrbrd_install_dir }}/extra/provision.sh"
@@ -51,7 +36,17 @@
 - name: Restore the scoreboard backup
   mysql_db:
     login_user: "{{ scrbrd_db_acct_name }}"
-    login_password: "{{ scrbrd_db_login_pwd_clear }}"
+    login_password: "{{ scrbrd_db_login_pwd }}"
     name: "{{ scrbrd_db_name }}"
     state: import
     target: "{{ scrbrd_install_dir }}/fbctf-backup.sql.gz"
+
+- name: Paste customized language php file
+  copy:
+    src: "{{ content_folder }}scoreboard/lang_en.php"
+    dest: "{{ scrbrd_install_dir }}/src/language"
+
+- name: Paste customized controller php file
+  copy:
+    src: "{{ content_folder }}scoreboard/IndexController.php"
+    dest: "{{ scrbrd_install_dir }}/src/controllers"

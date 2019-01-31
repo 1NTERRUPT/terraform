@@ -1,0 +1,12 @@
+# This is the folder to which the S3 files are pulled into
+# and from which they are pulled by different playbooks
+aws_region: us-east-1
+aws_profile: default
+s3_bucket_keys: 1nterrupt-util
+key_file: utilitel-tools.pem
+
+# Set the number of "player" accounts on the jump box
+player_count: 5
+
+# Set the timezone for all of the instances
+timezone: America/New_York

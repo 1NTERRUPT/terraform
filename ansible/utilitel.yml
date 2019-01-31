@@ -1,9 +1,49 @@
 ---
 - hosts: localhost
   connection: local
-  gather_facts: False
+  gather_facts: true
   roles:
     - backstage
+
+- hosts: all
+  become: true
+  tasks:
+
+  - name: Get regional variables
+    include_vars:
+      file: ./global_vars/regional.yml
+
+  - name: Get common variables
+    include_vars:
+      file: ./global_vars/common.yml
+
+  - name: Install common packages
+    apt:
+      name:
+        - htop
+        - traceroute
+        - whois
+        - nmap
+        - unzip
+        - curl
+        - exiftool
+        - wireshark
+      update_cache: true
+      state: latest
+    become: true
+
+  # Create the Treasure Hunt admin account
+  - name: Create the {{ THAdmin_acct_name }} user
+    user:
+      name: "{{ THAdmin_acct_name }}"
+      password: "{{ THAdmin_acct_pwd | password_hash('sha512', password_salt ) }}"
+      shell: "{{ users_shell }}"
+    become: true
+
+- hosts: tag_Name_pumpserver
+  become: true
+  roles:
+    - pumpserver
 
 - hosts: tag_Name_picks
   become: true
@@ -56,40 +96,31 @@
     - scoreboard
 
 - hosts: all
+  become: true
   tasks:
 
   - name: Set time zone
     timezone:
       name: "{{ timezone }}"
-    become: true
 
-  - name: Get IPs
+  - name: Get IP and hostname
     setup:
       filter:
         - default_ipv4
         - hostname
 
-  - debug:
-      msg: "IP address is {{ ansible_default_ipv4.address }} and the host name is {{ ansible_hostname }}"
-
-  - name: Write values to file
+  - name: Write hostnames and IPs to a file
     local_action:
-      copy content="\n{{ ansible_default_ipv4.address }}\t{{ ansible_hostname}}" dest=map_{{ ansible_hostname }}.txt
+      module: lineinfile
+      path: /home/{{ installer_acct_name }}/ansible/all_hosts
+      line: "{{ ansible_default_ipv4.address}}\t{{ ansible_hostname }}"
+      insertafter: EOF
 
-  - name: Install common packages
-    apt:
-      name:
-        - htop
-        - traceroute
-        - whois
-        - nmap
-        - unzip
-        - curl
-        - exiftool
-        - wireshark
-      update_cache: true
-      state: latest
-    become: true
+  - name: Copy the all_hosts file to all instances
+    copy:
+      src: ./all_hosts
+      dest: /etc/hosts
+    when: ansible_facts['hostname'] != "mailserver"
 
   - name: Update all of the software packages
     apt:
@@ -98,3 +129,16 @@
       autoclean: yes
       autoremove: yes
     become: true
+
+- name: Wrap it up
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  tasks:
+
+  - name: Clean up
+    file:
+      path: "{{ item }}"
+      state: absent
+    with_fileglob: "/home/ubuntu/.aws/*"

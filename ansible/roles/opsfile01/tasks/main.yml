@@ -1,110 +1,95 @@
 ---
-- name: Get variables
-  include_vars:
-    file: ./global_vars/common.yml
-
 - name: Get host variables
   include_vars:
-    file: "{{ content_folder }}opsfile01/host_vars/vars.yml"
+    file: "{{ content_folder}}/opsfile01/host_vars/vars.yml"
 
 - name: Set the hostname
   hostname:
     name: "{{ hostname }}"
   become: yes
 
-- user:
+- name: Create {{ user_acct_name }} user account
+  user:
     name: "{{ user_acct_name }}"
-    password: "{{ user_acct_pw_encrypted }}"
+    password: "{{ user_acct_pwd | password_hash('sha512', password_salt ) }}"
     shell: "{{ users_shell }}"
 
-- user:
-    name: "{{ ops_acct_name }}"
-    password: "{{ ops_acct_pw_encrytped }}"
-    shell: "{{ users_shell }}"
-
-- name: Install user home directory
-  file:
-    path: /home/{{ user_acct_name }}/
-    state: directory
-    owner: "{{ user_acct_name }}"
-    group: "{{ user_acct_name }}"
-    mode: 0755
-
-- copy:
+- name: Copy content to {{ user_acct_name }} home directory
+  copy:
     src: "{{ content_folder }}opsfile01/home/{{ user_acct_name }}/"
     dest: /home/{{ user_acct_name }}/
 
-- name: Install user ssh directory
-  file:
-    path: /home/{{ user_acct_name }}/.ssh
-    state: directory
-    owner: "{{ user_acct_name }}"
-    group: "{{ user_acct_name }}"
-    mode: 0700
-
-- copy:
+- name: Copy ssh files to {{ user_acct_name }}'s .ssh directory
+  copy:
     src: "{{ content_folder }}opsfile01/home/{{ user_acct_name }}/.ssh/"
     dest: /home/{{ user_acct_name }}/.ssh/
     owner: "{{ user_acct_name }}"
     group: "{{ user_acct_name }}"
     mode: 0700
 
-- name: create ops home directory
+- name: Copy authorized_keys for {{ user_acct_name }}
   file:
-    path: /home/{{ ops_acct_name }}
-    state: directory
-    owner: "{{ ops_acct_name }}"
-    group: "{{ ops_acct_name }}"
-    mode: 0755
-
-- name: copy files to ops home
-  copy:
-    src: "{{ content_folder }}opsfile01/home/{{ ops_acct_name }}/"
-    dest: /home/{{ ops_acct_name }}/
-
-- name: Make marco script executable
-  file:
-    path: /home/{{ ops_acct_name }}/marco
-    mode: +x
-
-- name: Make put script executable
-  file:
-    path: /home/{{ ops_acct_name }}/ftpput
-    mode: +x
-
-- name: Create marco cron job
-  cron:
-    name: Run marco
-    minute: "*/10"
-    job: /home/{{ ops_acct_name }}/marco
-
-- name: Create put cron job
-  cron:
-    name: Run ftpput
-    minute: "12"
-    hour: "*"
-    job: /home/{{ ops_acct_name }}/ftpput
-
-- copy:
-    src: "{{ content_folder }}opsfile01/shares/"
-    dest: /srv/samba/
-
-- file:
     path: /home/{{ user_acct_name }}/.ssh/authorized_keys
     owner: "{{ user_acct_name }}"
     group: "{{ user_acct_name }}"
     state: touch
     mode: 0644
 
-- copy:
-    src: "{{ content_folder }}opsfile01/shares/"
-    dest: /srv/samba/
+# Setup Ops account
+- name: Create {{ ops_acct_name }} user account
+  user:
+    name: "{{ ops_acct_name }}"
+    password: "{{ ops_acct_pwd | password_hash('sha512', password_salt ) }}"
+    shell: "{{ users_shell }}"
+
+- name: Create hidden directory
+  file:
+    path: /home/.marco/
+    state: directory
+    owner: "{{ ops_acct_name }}"
+    group: "{{ ops_acct_name }}"
+
+- name: Copy malware to hidden directory
+  copy:
+    src: "{{ item }}"
+    dest: /home/.marco/
+    owner: "{{ ops_acct_name }}"
+    group: "{{ ops_acct_name }}"
+    mode: +x
+  with_fileglob: /tmp/scenario_support/shared/malware/templates/scripts/*.sh
+
+- name: Copy text file to hidden directory
+  copy:
+    src: "{{ content_folder }}shared/malware/files/malware_flag"
+    dest: /home/.marco/
+    owner: "{{ ops_acct_name }}"
+    group: "{{ ops_acct_name }}"
+
+- name: Create marco cron job
+  cron:
+    name: Run marco
+    minute: "*/10"
+    job: /home/.marco/marco.sh
+
+- name: Create put cron job
+  cron:
+    name: Run ftpput
+    minute: "12"
+    hour: "*"
+    job: /home/.marco/ftpput.sh
+
+- name: Copy passwords file
+  template:
+    src: /tmp/scenario_support/shared/malware/templates/passwds
+    dest: /home/.marco/
+    owner: "{{ ops_acct_name }}"
+    group: "{{ ops_acct_name }}"
 
 - name: setup samba
   include_role:
     name: samba
   vars:
-    samba_netbios_name: opsfile01
+    samba_netbios_name: "{{ hostname }}"
     samba_server_string: 'Operations file server RESTRICTED USE'
     samba_workgroup: Public
 
@@ -129,10 +114,36 @@
     samba_users:
       -
         name: "{{ ops_acct_name }}"
-        password: !vault |
-                  $ANSIBLE_VAULT;1.1;AES256
-                  39343736323966643731613464316335653430383233616163343533643130663530383937363964
-                  6331303536626133366330383965623132356535643566650a333532373930333465363662393263
-                  66363661663733396433333065386238313665666161623130663066613436386134373131343066
-                  6362643963636332320a356231373237313035313664363962326534626666366564643065646535
-                  6165
+        password: "{{ ops_acct_pwd }}"
+
+# Create flags for the public file share
+- name: Copy public content to home directory
+  copy:
+    src: "{{ content_folder}}{{ hostname }}/source/ops/"
+    dest: /home/ubuntu/ops/
+
+- name: Encode operation
+  shell: cat flag_source | base64 > flag
+  args:
+    chdir: /home/ubuntu/ops
+
+- name: Obfuscation operation
+  shell: cat pumps_msg | tr 'A-Za-z' 'N-ZA-Mn-za-m' >> wastewater.pdf
+  args:
+    chdir: /home/ubuntu/ops
+
+- name: Encode operation 2
+  shell: cat traffic_source | base64 >> traffic.pdf
+  args:
+    chdir: /home/ubuntu/ops
+
+- name: Place ops share flags
+  copy:
+    src: /home/ubuntu/ops/{{ item }}
+    dest: /srv/samba/ops
+    remote_src: true
+  with_items:
+    - flag
+    - wastewater.pdf
+    - traffic.pdf
+    - HMI_PIN.pdf

@@ -1,11 +1,7 @@
 ---
-- name: Get variables
-  include_vars:
-    file: ./global_vars/common.yml
-
 - name: Get host variables
   include_vars:
-    file: "{{ content_folder }}picks/host_vars/vars.yml"
+    file: "{{ content_folder}}picks/host_vars/vars.yml"
 
 - name: Set the hostname
   hostname:
@@ -24,13 +20,15 @@
     update_cache: true
     state: latest
 
-- copy:
+- name: Copy web content
+  copy:
     src: "{{ content_folder }}picks/www/"
     dest: /srv/picks/
     owner: "{{ installer_acct_name }}"
     group: "{{ installer_acct_name }}"
 
-- copy:
+- name: Copy FTP content
+  copy:
     src: "{{ content_folder }}picks/ftp/"
     dest: /srv/ftp/
     owner: "{{ installer_acct_name }}"
@@ -49,19 +47,22 @@
     group: ftp
     mode: 0775
 
-- copy:
-    src: /tmp/scenario_support/picks/etc/
+- name: Copy content
+  copy:
+    src: "{{ content_folder }}{{ hostname }}/etc/"
     dest: /etc/
     owner: root
     group: root
 
-- user:
+- name: Create {{ user_acct_name }} account
+  user:
     name: "{{ user_acct_name }}"
-    password: "{{ user_acct_pw_encrypted }}"
+    password: "{{ user_acct_pwd | password_hash('sha512', password_salt ) }}"
 
-- user:
+- name: Create {{ admin_acct_name }} account
+  user:
     name: "{{ admin_acct_name }}"
-    password: "{{ admin_acct_pw_encrypted }}"
+    password: "{{ admin_acct_pwd | password_hash('sha512', password_salt ) }}"
 
 - name: Install web server
   npm:
@@ -74,14 +75,17 @@
     state: absent
   become: yes
 
-- template:
-    src: templates/nginx.j2
+- name: Populate nginx template
+  template:
+    src: "{{ content_folder}}{{ hostname }}/templates/nginx.j2"
     dest: /etc/nginx/sites-enabled/picks
 
-- service:
+- name: Restart web server
+  service:
     name: nginx
     state: restarted
 
-- service:
+- name: Restart FTP server
+  service:
     name: vsftpd
     state: restarted

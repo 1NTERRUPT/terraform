@@ -1,8 +1,4 @@
 ---
-- name: Get variables
-  include_vars:
-    file: ./global_vars/common.yml
-
 - name: Get host variables
   include_vars:
     file: "{{ content_folder }}pubfile01/host_vars/vars.yml"
@@ -12,23 +8,28 @@
     name: "{{ hostname }}"
   become: yes
 
-- user:
+- name: Install software packages
+  apt:
+    name:
+      - texlive
+    update_cache: true
+    state: latest
+
+- name: Create the {{ user_acct_name }} account
+  user:
     name: "{{ user_acct_name }}"
-    password: "{{ user_acct_pw_encrypted }}"
+    password: "{{ user_acct_pwd | password_hash('sha512', password_salt ) }}"
 
-- user:
+- name: Create the {{ admin_acct_name }} account
+  user:
     name: "{{ admin_acct_name }}"
-    password: "{{ admin_acct_pw_encrypted }}"
-
-- copy:
-    src: "{{ content_folder }}pubfile01/"
-    dest: /srv/samba/
+    password: "{{ admin_acct_pwd | password_hash('sha512', password_salt ) }}"
 
 - name: setup samba
   include_role:
     name: samba
   vars:
-    samba_netbios_name: pubfile01
+    samba_netbios_name: "{{ hostname }}"
     samba_server_string: 'Welcome to the {{ company_name }} public file server'
     samba_workgroup: Public
 
@@ -41,7 +42,7 @@
 
     samba_map_to_guest: Never
 
-    samba_shares_root: /srv/samba
+    samba_shares_root: "{{ install_dir }}"
     samba_shares:
       - name: public
         comment: "public fileshare"
@@ -58,10 +59,53 @@
     samba_users:
       -
         name: "{{ admin_acct_name }}"
-        password: !vault |
-                  $ANSIBLE_VAULT;1.1;AES256
-                  30363762623230656436376432653030376565666333353036663334646566623966643361326466
-                  3633393964626136303034363863623630613635306238300a326534363437323663336435363262
-                  32646635363631626238303966396338323965653564666636306433643930373062373031383834
-                  6333343364646635300a343766326233633866626637383939666630666561616137623665306561
-                  3331
+        password: "{{ admin_acct_pwd }}"
+
+- name: Copy the content to the {{ installer_acct_name }} home directory
+  copy:
+    src: "{{ content_folder }}{{hostname}}/source/"
+    dest: /home/{{ installer_acct_name }}/source/
+
+- name: Get the host's IP address
+  setup:
+    filter:
+      - default_ipv4
+
+- name: Populate the AUP template
+  template:
+    src: "{{ content_folder }}pubfile01/templates/public/wifi-aup.tex"
+    dest: "/home/{{ installer_acct_name }}/"
+
+- name: Convert tex to PDF
+  command: pdflatex wifi-aup.tex
+  args:
+    chdir: "/home/{{ installer_acct_name}}/"
+
+- name: Copy PDF to file server
+  copy:
+    src: "/home/{{ installer_acct_name }}/wifi-aup.pdf"
+    dest: "{{ install_dir }}public"
+    remote_src: true
+  become: yes
+
+- name: Copy public content to the file server
+  copy:
+    src: "/home/ubuntu/source/public/{{ item }}"
+    dest: "{{ install_dir }}public"
+    remote_src: true
+  with_items:
+    - anotherFlag.txt
+
+- name: Rotate
+  shell: cat rot13_source | tr 'A-Za-z' 'N-ZA-Mn-za-m' > rot13ntomatoes
+  args:
+    chdir: /home/{{ installer_acct_name }}/source/private
+
+- name: Copy private content to the file server
+  copy:
+    src: "/home/ubuntu/source/private/{{ item }}"
+    dest: "{{ install_dir }}private"
+    remote_src: true
+  with_items:
+    - flag.txt
+    - rot13ntomatoes

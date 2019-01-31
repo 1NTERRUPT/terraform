@@ -1,8 +1,4 @@
 ---
-- name: Get the global variables
-  include_vars:
-    file: ./global_vars/common.yml
-
 - name: Get the host variables
   include_vars:
     file: "{{ content_folder }}/wikiserver/host_vars/vars.yml"
@@ -76,6 +72,7 @@
     src: "{{ content_folder }}wikiserver/templates/nginx.j2"
     dest: /etc/nginx/sites-enabled/{{ hostname }}
 
-- service:
+- name: Restart web server
+  service:
     name: nginx
     state: restarted

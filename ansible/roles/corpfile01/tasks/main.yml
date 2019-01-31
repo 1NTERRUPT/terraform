@@ -1,109 +1,106 @@
 ---
-- name: Get variables
-  include_vars:
-    file: ./global_vars/common.yml
-
 - name: Get host variables
   include_vars:
     file: "{{ content_folder }}corpfile01/host_vars/vars.yml"
 
-- name: Set the hostname
+- name: Set the hostname for {{ hostname }}
   hostname:
     name: "{{ hostname }}"
   become: yes
 
-- user:
+- name: Install packages
+  apt:
+    name:
+      - qrencode
+    update_cache: true
+    state: latest
+
+# Set up user accounts and directories
+- name: Create the {{ user_acct_name }} account
+  user:
     name: "{{ user_acct_name }}"
-    password: "{{ user_acct_pw_encrypted }}"
+    password: "{{ user_acct_pwd | password_hash('sha512', password_salt ) }}"
     shell: "{{ users_shell }}"
 
-- user:
-    name: "{{ admin_acct_name }}"
-    password: "{{ admin_acct_pw_encrypted }}"
-    shell: "{{ users_shell }}"
-
-- name: Install user home directory
-  file:
-    path: /home/{{ user_acct_name }}/
-    state: directory
-    owner: "{{ user_acct_name }}"
-    group: "{{ user_acct_name }}"
-    mode: 0755
-
-- copy:
+- name: Copy content to the {{ user_acct_name }} home directory
+  copy:
     src: "{{ content_folder }}corpfile01/home/{{ user_acct_name }}/"
     dest: /home/{{ user_acct_name }}/
     owner: "{{ user_acct_name }}"
     group: "{{ user_acct_name }}"
     mode: 0755
 
-- name: Install user ssh directory
-  file:
-    path: /home/{{ user_acct_name }}/.ssh
-    state: directory
-    owner: "{{ user_acct_name }}"
-    group: "{{ user_acct_name }}"
-    mode: 0700
-
-- copy:
-    src: "{{ content_folder }}corpfile01/home/{{ user_acct_name }}/.ssh/"
+- name: Copy content to {{ user_acct_name }} ssh directory
+  copy:
+    src: "{{ content_folder }}{{ hostname }}/home/{{ user_acct_name }}/.ssh/"
     dest: /home/{{ user_acct_name}}/.ssh/
     owner: "{{ user_acct_name }}"
     group: "{{ user_acct_name }}"
     mode: 0700
 
-- copy:
-    src: "{{ content_folder }}corpfile01/shares/"
-    dest: /srv/samba/
-
-- name: create admin home directory
+- name: Create authorized_keys file for {{ user_acct_name }}
   file:
-    path: /home/{{ admin_acct_name }}/
-    state: directory
-    owner: "{{ admin_acct_name }}"
-    group: "{{ admin_acct_name }}"
-    mode: 0755
-
-- name: copy files to admin home
-  copy:
-    src: "{{ content_folder }}corpfile01/home/{{ admin_acct_name }}/"
-    dest: /home/{{ admin_acct_name }}/
-
-- name: Make marco script executable
-  file:
-    path: /home/{{ admin_acct_name }}/marco
-    mode: +x
-
-- name: Make put script executable
-  file:
-    path: /home/{{ admin_acct_name }}/ftpput
-    mode: +x
-
-- name: create marco cron job
-  cron:
-    name: Run marco
-    minute: "*/5"
-    job: /home/{{ admin_acct_name }}/marco
-
-- name: create ftpput cron job
-  cron:
-    name: Run put
-    minute: "15"
-    hour: "*"
-    job: /home/{{ admin_acct_name }}/ftpput
-
-- file:
     path: /home/{{ user_acct_name }}/.ssh/authorized_keys
     owner: "{{ user_acct_name }}"
     group: "{{ user_acct_name }}"
     state: touch
     mode: 0644
 
+- name: Create the {{ admin_acct_name }} account
+  user:
+    name: "{{ admin_acct_name }}"
+    password: "{{ admin_acct_pwd | password_hash('sha512', password_salt ) }}"
+    shell: "{{ users_shell }}"
+
+- name: Create hidden directory
+  file:
+    path: /home/.marco/
+    state: directory
+    owner: "{{ admin_acct_name }}"
+    group: "{{ admin_acct_name }}"
+
+- name: Copy content to hidden directory
+  template:
+    src: "{{ item }}"
+    dest: /home/.marco/
+    owner: "{{ admin_acct_name }}"
+    group: "{{ admin_acct_name }}"
+    mode: +x
+  with_fileglob: /tmp/scenario_support/shared/malware/templates/scripts/*.sh
+
+- name: Copy text file to hidden directory
+  copy:
+    src: "{{ content_folder }}shared/malware/files/malware_flag"
+    dest: /home/.marco/
+    owner: "{{ admin_acct_name }}"
+    group: "{{ admin_acct_name }}"
+
+- name: Create marco cron job
+  cron:
+    name: Run marco
+    minute: "*/10"
+    job: /home/.marco/marco.sh
+
+- name: Create put cron job
+  cron:
+    name: Run ftpput
+    minute: "12"
+    hour: "*"
+    job: /home/.marco/ftpput.sh
+
+- name: Copy passwords file
+  template:
+    src: /tmp/scenario_support/shared/malware/templates/passwds
+    dest: /home/.marco/
+    owner: "{{ admin_acct_name }}"
+    group: "{{ admin_acct_name }}"
+
+# Set up the file server
 - name: setup samba
   include_role:
     name: samba
   vars:
-    samba_netbios_name: corpfile01
+    samba_netbios_name: "{{ hostname }}"
     samba_server_string: 'Welcome to the {{ company_name }} file server'
     samba_workgroup: "{{ company_nick_name }}"
 
@@ -133,10 +130,66 @@
     samba_users:
       -
         name: "{{ admin_acct_name }}"
-        password: !vault |
-                  $ANSIBLE_VAULT;1.1;AES256
-                  30363762623230656436376432653030376565666333353036663334646566623966643361326466
-                  3633393964626136303034363863623630613635306238300a326534363437323663336435363262
-                  32646635363631626238303966396338323965653564666636306433643930373062373031383834
-                  6333343364646635300a343766326233633866626637383939666630666561616137623665306561
-                  3331
+        password: "{{ admin_acct_pwd }}"
+
+# Create flags for the public file share
+- name: Copy public content to home directory
+  copy:
+    src: "{{ content_folder}}{{ hostname }}/source/public/"
+    dest: /home/ubuntu/public/
+
+- name: Encode operation
+  shell: cat flag64_source | base64 > flag64
+  args:
+    chdir: /home/ubuntu/public
+
+- name: Obfuscation operation
+  shell: cat handbook_msg | tr 'A-Za-z' 'N-ZA-Mn-za-m' >> handbook.pdf
+  args:
+    chdir: /home/ubuntu/public
+
+- name: Create QR code
+  shell: qrencode -o cle.png "11000000.0010101100.000000000.00000000"
+  args:
+    chdir: /home/ubuntu/public
+
+- name: Down Under Step 1
+  shell: cat photo_msg | tr 'A-Za-z' 'N-ZA-Mn-za-m' >> lookup.jpg
+  args:
+    chdir: /home/ubuntu/public
+
+- name: Down Under Step 2
+  shell: cat lookup.jpg | base64 > lookup
+  args:
+    chdir: /home/ubuntu/public
+
+- name: Place public share flags
+  copy:
+    src: /home/ubuntu/public/{{ item }}
+    dest: /srv/samba/public
+    remote_src: true
+  with_items:
+    - flag64
+    - handbook.pdf
+    - cle.png
+    - lookup
+
+# Create flags for the private file share
+- name: Copy private content to home directory
+  copy:
+    src: "{{ content_folder}}{{ hostname }}/source/private/"
+    dest: /home/ubuntu/private/
+
+- name: Encode operation
+  shell: cat flag_source | base64 > flag
+  args:
+    chdir: /home/ubuntu/private
+
+- name: Place private share flags
+  copy:
+    src: /home/ubuntu/private/{{ item }}
+    dest: /srv/samba/private
+    remote_src: true
+  with_items:
+    - flag
+    - clave

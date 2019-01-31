@@ -3,13 +3,17 @@
 terraform.tfvars
 terraform.tfstate
 terraform.tfstate.backup
-variables.tf
+variables.tf*
+regional.tf*
 
 # Ansible files
 *.retry
+ansible/global_vars/*
+
 
 # General files
 todo.md
 *.swp
 *.DS_Store
-backstagessh.sh
+*-east
+*-west

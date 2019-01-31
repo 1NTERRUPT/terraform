@@ -4,13 +4,18 @@
     name: backstage
   become: true
 
-- name: Get global variables
+- name: Get regional variables
+  include_vars:
+    file: ./global_vars/regional.yml
+
+- name: Get common variables
   include_vars:
     file: ./global_vars/common.yml
-  
-- name: Get host variables
-  include_vars:
-    file: ../host_vars/vars.yml
+
+- name: Set time zone
+  timezone:
+    name: "{{ timezone }}"
+  become: true
 
 - name: Setup ssh credentials
   aws_s3:
@@ -26,6 +31,13 @@
     group: "{{ installer_acct_name }}"
     mode: 0700
 
+- name: Create all_hosts file
+  file:
+    path: /home/{{ installer_acct_name }}/ansible/all_hosts
+    state: touch
+    owner: "{{ installer_acct_name }}"
+    group: "{{ installer_acct_name }}"
+
 - name: Create scenario folder
   file:
     path: "{{ content_folder }}"
@@ -34,4 +46,4 @@
     group: "{{ installer_acct_name }}"
 
 - name: Download scenario support files
-  command: "aws s3 cp --region={{ aws_region }} --recursive s3://{{ s3_bucket_content }} {{ content_folder }}"
+  command: "aws s3 cp --recursive s3://{{ s3_bucket_content }} {{ content_folder }}"

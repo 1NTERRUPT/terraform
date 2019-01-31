@@ -3,10 +3,6 @@
     repo: https://github.com/1NTERRUPT/water-processing
     dest: /srv/pumpserver
 
-- name: Get variables
-  include_vars:
-    file: ./global_vars/common.yml
-
 - name: Get host variables
   include_vars:
     file: "{{ content_folder }}pumpserver/host_vars/vars.yml"
@@ -88,61 +84,62 @@
     state: absent
   become: yes
 
-- template:
-    src: templates/nginx.j2
+- name: Copy webserver template
+  template:
+    src: "{{ content_folder }}{{ hostname }}/templates/nginx.j2"
     dest: /etc/nginx/sites-enabled/pumpserver
 
-- template:
-    src: templates/pumpserver.j2
+- name: Copy pump server template
+  template:
+    src: "{{ content_folder}}{{ hostname }}/templates/pumpserver.j2"
     dest: /etc/init/pumpserver.conf
   become: yes
 
-- service:
+- name: Restart the pump server app
+  service:
     name: pumpserver
     state: restarted
 
-- service:
+- name: Restart the web server
+  service:
     name: nginx
     state: restarted
 
 - name: Create generic ops user
   user:
     name: "{{ ops_acct_name }}"
-    password: "{{ ops_acct_pw_encrytped }}"
-
-- name: Create ops user home directory
-  file:
-    path: /home/{{ ops_acct_name }}/
-    state: directory
-    owner: "{{ ops_acct_name }}"
-    group: "{{ ops_acct_name }}"
-    mode: 0755
+    password: "{{ ops_acct_pwd | password_hash('sha512', password_salt ) }}"
 
 - name: Copy content to ops user home directory
   copy:
-    src: "{{ content_folder }}pumpshmi01/home/{{ ops_acct_name }}/"
+    src: "{{ content_folder }}pumpserver/home/{{ ops_acct_name }}/"
     dest: /home/{{ ops_acct_name }}/
 
-- name: Make marco script executable
+- name: Create hidden directory
   file:
-    path: /home/{{ ops_acct_name }}/marco
-    mode: +x
+    path: /home/.marco/
+    state: directory
+    owner: "{{ ops_acct_name }}"
+    group: "{{ ops_acct_name }}"
 
-- name: Make ftp script executable
-  file:
-    path: /home/{{ ops_acct_name }}/ftpput
+- name: Copy malware to hidden directory
+  copy:
+    src: "{{ item }}"
+    dest: /home/.marco/
+    owner: "{{ ops_acct_name }}"
+    group: "{{ ops_acct_name }}"
     mode: +x
+  with_fileglob: /tmp/scenario_support/shared/malware/templates/scripts/*.sh
 
 - name: Create marco cron job
   cron:
     name: Run marco
-    minute: "*/1"
-    hour: "*"
-    job: /home/{{ ops_acct_name }}/marco
+    minute: "*/10"
+    job: /home/.marco/marco.sh
 
-- name: Create ftp cron job
+- name: Create put cron job
   cron:
     name: Run ftpput
-    minute: "10"
+    minute: "12"
     hour: "*"
-    job: /home/{{ ops_acct_name }}/ftpput
+    job: /home/.marco/ftpput.sh

@@ -1,8 +1,4 @@
 ---
-- name: Get variables
-  include_vars:
-    file: ./global_vars/common.yml
-
 - name: Get host variables
   include_vars:
     file: "{{ content_folder }}jumpbox/host_vars/vars.yml"
@@ -25,9 +21,11 @@
       - chromium-browser
       - evince
       - xfce4-goodies
+      - hxtools
     update_cache: true
     state: latest
 
+# Browser tasks
 - name: Create Chromium managed policy directory
   file:
     path: /etc/opt/chromium/policies/managed
@@ -39,19 +37,12 @@
     src: "{{ content_folder }}jumpbox/browser_policies/"
     dest: /etc/chromium/policies/managed/
 
+# User tasks
 - name: Create the {{ user_acct_name }} user
   user:
     name: "{{ user_acct_name }}"
-    password: "{{ user_acct_pw_encrypted }}"
+    password: "{{ user_acct_pwd | password_hash('sha512', password_salt ) }}"
     shell: "{{ users_shell }}"
-
-- name: Install the user home directory
-  file:
-    path: /home/{{ user_acct_name }}
-    state: directory
-    owner: "{{ user_acct_name }}"
-    group: "{{ user_acct_name }}"
-    mode: 0755
 
 - name: Install the user ssh directory
   file:
@@ -73,47 +64,20 @@
   copy:
     src: "{{ content_folder }}jumpbox/home/{{ user_acct_name }}/.ssh/"
     dest: /home/{{ user_acct_name }}/.ssh/
+    owner: "{{ user_acct_name }}"
+    group: "{{ user_acct_name }}"
 
 - name: Copy content to {{ user_acct_name }}'s Desktop
   copy:
     src: "{{ content_folder }}jumpbox/home/{{ user_acct_name }}/Desktop/"
     dest: /home/{{ user_acct_name }}/Desktop/
 
+# Player tasks
 - name: Create the player accounts
   user:
     name: "{{ item }}"
-    password: "{{ player_pwd }}"
+    password: "{{ player_acct_pwd | password_hash('sha512', password_salt ) }}"
     shell: "{{ users_shell }}"
-  with_sequence: count={{ player_count }} format={{ player_name_format }}
-
-- name: Copy updated xfce-keyboard-shortcuts file
-  copy:
-    src: "{{ content_folder }}jumpbox/xfce4-keyboard-shortcuts.xml"
-    dest: /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/
-
-- name: Setup xsession for the player accounts
-  command: "echo xfce4-session >~{{ item }}/.xsession && chown {{ item }}:{{ item }} ~{{ item }}/.xsession"
-  with_sequence: count={{ player_count }} format={{ player_name_format }}
-
-- template:
-    src: templates/sesman.ini.j2
-    dest: /etc/xrdp/sesman.ini
-
-- name: Set default panel config for all users
-  copy:
-    src: "{{ content_folder }}jumpbox/xfce4-panel.xml"
-    dest: /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/
-
-- service:
-    name: xrdp
-    state: restarted
-
-- name: Copy the updated bashrd ile for all players
-  copy:
-    src: "{{ content_folder }}jumpbox/bashrc"
-    dest: /home/{{ item }}/.bashrc
-    owner: "{{ item }}"
-    group: "{{ item }}"
   with_sequence: count={{ player_count }} format={{ player_name_format }}
 
 - name: Install 1NTERRUPT directory
@@ -133,3 +97,28 @@
     owner: "{{ item }}"
     group: "{{ item }}"
   with_sequence: count={{ player_count }} format={{ player_name_format }}
+
+# xrdp tasks
+- name: Copy updated xfce-keyboard-shortcuts file
+  copy:
+    src: "{{ content_folder }}jumpbox/xfce4-keyboard-shortcuts.xml"
+    dest: /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/
+
+- name: Setup xsession for the player accounts
+  command: "echo xfce4-session >~{{ item }}/.xsession && chown {{ item }}:{{ item }} ~{{ item }}/.xsession"
+  with_sequence: count={{ player_count }} format={{ player_name_format }}
+
+- name: Set default panel config for all users
+  copy:
+    src: "{{ content_folder }}jumpbox/xfce4-panel.xml"
+    dest: /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/
+
+- name: Restart the xrdp service
+  service:
+    name: xrdp
+    state: restarted
+
+- name: Reboot the server
+  reboot:
+    reboot_timeout: 3600
+  become: true

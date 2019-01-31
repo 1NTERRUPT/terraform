@@ -41,27 +41,27 @@
   debconf:
     name: 'mysql-server'
     question: 'mysql-server/root_password'
-    value: "{{ web_app_acct_pwd_clear }}"
+    value: "{{ web_app_acct_pwd }}"
     vtype: 'password'
 
 - name: Confirm MySQL root password before installing
   debconf:
     name: 'mysql-server'
     question: 'mysql-server/root_password_again'
-    value: "{{ web_app_acct_pwd_clear }}"
+    value: "{{ web_app_acct_pwd }}"
     vtype: 'password'
 
 - name: Set root privileges
   mysql_user:
     login_user: "{{ web_app_acct_name }}"
-    login_password: "{{ web_app_acct_pwd_clear }}"
+    login_password: "{{ web_app_acct_pwd }}"
     user: "{{ web_app_acct_name }} priv=*.*:ALL,GRANT"
     state: present
 
 - name: Create the php account and assign privileges
   mysql_user:
     name: "{{ php_acct_name }}"
-    password: "{{ php_acct_pwd_clear }}"
+    password: "{{ php_acct_pwd }}"
     priv: "*.*:ALL,GRANT"
     state: present
 
@@ -101,7 +101,7 @@
     name: "{{ web_app_db_name }}"
     state: present
     login_user: "{{ web_app_acct_name }}"
-    login_password: "{{ web_app_acct_pwd_clear }}"
+    login_password: "{{ web_app_acct_pwd }}"
 
 - name: Copy the sql script
   template:
@@ -111,7 +111,7 @@
 - name: Import webapp SQL script
   mysql_db:
     login_user: "{{ web_app_acct_name }}"
-    login_password: "{{ web_app_acct_pwd_clear }}"
+    login_password: "{{ web_app_acct_pwd }}"
     name: "{{ web_app_db_name }}"
     state: import
     target: /home/{{ installer_acct_name }}/webapp.sql

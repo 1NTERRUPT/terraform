@@ -1,8 +1,4 @@
 ---
-- name: Get global variables
-  include_vars:
-    file: ./global_vars/common.yml
-
 - name: Get host variables
   include_vars:
     file: "{{ content_folder }}blogserver/host_vars/vars.yml"
