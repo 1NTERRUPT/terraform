@@ -1,0 +1,46 @@
+---
+- name: Get host variables
+  include_vars:
+    file: "{{ content_folder }}lights_hmi/host_vars/vars.yml"
+
+- name: Set host name
+  hostname:
+    name: "{{ hostname }}"
+
+# Set up the web server
+- name: Install the web server
+  include_role:
+    name: web_server
+
+- name: Create javascript directory
+  file:
+    path: /var/www/html/js/
+    state: directory
+
+- name: Copy js files into place
+  copy:
+    src: "{{ item }}"
+    dest: /var/www/html/js
+  with_fileglob: "{{ content_folder }}lights_hmi/files/js/*"
+
+- name: Create css directory
+  file:
+    path: /var/www/html/css/
+    state: directory
+
+- name: Copy css files into place
+  copy:
+    src: "{{ item }}"
+    dest: /var/www/html/css/
+  with_fileglob: "{{ content_folder }}lights_hmi/files/css/*"
+
+- name: Remove the default home page
+  file:
+    path: /var/www/html/index.nginx-debian.html
+    state: absent
+
+- name: Copy HTML files into place
+  copy:
+    src: "{{ item }}"
+    dest: /var/www/html/
+  with_fileglob: "{{ content_folder }}lights_hmi/files/html/*"

@@ -40,6 +40,11 @@
       shell: "{{ users_shell }}"
     become: true
 
+- hosts: tag_Name_lights_hmi
+  become: true
+  roles:
+    - lights_hmi
+    
 - hosts: tag_Name_pumpserver
   become: true
   roles:
@@ -129,7 +134,7 @@
 
   - name: Update all of the software packages
     apt:
-      force_apt_get: yes
+      force_apt_get: true
       upgrade: full
-      autoclean: yes
-      autoremove: yes
+      autoclean: true
+      autoremove: true
