@@ -372,6 +372,30 @@ resource "aws_route53_record" "pumpserver" {
   records = ["${element(aws_instance.pumpserver.*.private_ip, count.index)}"]
 }
 
+resource "aws_instance" "lights_hmi" {
+  ami             = "${data.aws_ami.ubuntu18.id}"
+  instance_type   = "${var.inst_type_default}"
+  subnet_id       = "${element(module.network.subnet_ids[var.ops],count.index)}"
+  key_name        = "${var.key_name}"
+  security_groups = ["${element(aws_security_group.all_hmi.*.id, count.index)}"]
+  count           = "${var.team_count}"
+  user_data       = "${data.template_file.script.rendered}"
+
+  tags {
+    Name = "lights_hmi"
+    team = "${count.index}"
+  }
+}
+
+resource "aws_route53_record" "lights_hmi" {
+  count   = "${var.team_count}"
+  zone_id = "${element(aws_route53_zone.utilitel.*.id,count.index)}"
+  name    = "lights_hmi"
+  type    = "A"
+  ttl     = "10"
+  records = ["${element(aws_instance.lights_hmi.*.private_ip, count.index)}"]
+}
+
 resource "aws_instance" "opsfile01" {
   ami             = "${data.aws_ami.ubuntu16.id}"
   instance_type   = "${var.inst_type_default}"

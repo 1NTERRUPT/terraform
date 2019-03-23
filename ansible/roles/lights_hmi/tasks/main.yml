@@ -1,0 +1,25 @@
+---
+- name: Get host variables
+  include_vars:
+    file: "{{ content_folder }}lights_hmi/host_vars/vars.yml"
+
+- name: Set host name
+  hostname:
+    name: "{{ hostname }}"
+
+# Set up the web server
+- name: Install the web server
+  include_role:
+    name: web_server
+
+- name: Clone the lights_hmi
+  git:
+    repo: https://github.com/MarcBlackmer/trafficLightsHMI.git
+    dest: /srv/trafficLightsHMI/
+    force: true
+
+- name: Copy files to web server directory
+  synchronize:
+    src: /srv/trafficLightsHMI/
+    dest: /var/www/html/
+  delegate_to: "{{ inventory_hostname }}"

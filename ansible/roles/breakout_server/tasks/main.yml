@@ -265,3 +265,8 @@
     src: /home/{{ installer_acct_name }}/strings.jpg
     dest: /srv/samba/public/
     remote_src: true
+    
+- name: Reboot the server
+  reboot:
+    reboot_timeout: 3600
+  become: true

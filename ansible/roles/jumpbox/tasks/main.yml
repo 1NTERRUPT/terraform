@@ -6,7 +6,7 @@
 - name: Set the hostname
   hostname:
     name: "{{ hostname }}"
-  become: yes
+  become: true
 
 - name: Install Packages
   apt:
@@ -45,14 +45,48 @@
     password: "{{ user_acct_pwd | password_hash('sha512', password_salt ) }}"
     shell: "{{ users_shell }}"
 
+# User ssh set up
 - name: Install the user ssh directory
   file:
     path: /home/{{ user_acct_name }}/.ssh
     state: directory
     owner: "{{ user_acct_name }}"
     group: "{{ user_acct_name }}"
-    mode: 0400
+    mode: 0700
 
+- name: Copy ssh public key to {{ user_acct_name }}'s home directory
+  copy:
+    src: "{{ content_folder }}jumpbox/home/{{ user_acct_name }}/.ssh/id_rsa.pub"
+    dest: /home/{{ user_acct_name }}/.ssh/
+    owner: "{{ user_acct_name }}"
+    group: "{{ user_acct_name }}"
+    mode: 0644
+
+- name: Copy ssh private key to {{ user_acct_name }}'s home directory
+  copy:
+    src: "{{ content_folder }}jumpbox/home/{{ user_acct_name }}/.ssh/id_rsa"
+    dest: /home/{{ user_acct_name }}/.ssh/
+    owner: "{{ user_acct_name }}"
+    group: "{{ user_acct_name }}"
+    mode: 0600
+
+- name: Create the local access folder for {{ user_acct_name }}
+  file:
+    path: /home/{{ user_acct_name }}/remote_desktop
+    state: directory
+    owner: "{{ user_acct_name }}"
+    group: "{{ user_acct_name }}"
+    mode: 0774
+
+- name: Add file to the local access directory
+  copy:
+    src: "{{ content_folder }}jumpbox/home/{{ user_acct_name }}/remote_desktop/"
+    dest: /home/{{ user_acct_name }}/remote_desktop
+    owner: "{{ user_acct_name }}"
+    group: "{{ user_acct_name }}"
+    mode: 0770
+
+# Create and populate desktop content
 - name: Copy content to {{ user_acct_name }}'s home directory
   copy:
     src: "{{ content_folder }}jumpbox/home/{{ user_acct_name }}/"
@@ -60,13 +94,6 @@
     owner: "{{ user_acct_name }}"
     group: "{{ user_acct_name }}"
     mode: 0755
-
-- name: Copy ssh content to {{ user_acct_name }}'s home directory
-  copy:
-    src: "{{ content_folder }}jumpbox/home/{{ user_acct_name }}/.ssh/"
-    dest: /home/{{ user_acct_name }}/.ssh/
-    owner: "{{ user_acct_name }}"
-    group: "{{ user_acct_name }}"
 
 - name: Copy content to {{ user_acct_name }}'s Desktop
   copy:
@@ -81,6 +108,33 @@
     shell: "{{ users_shell }}"
   with_sequence: count={{ player_count }} format={{ player_name_format }}
 
+- name: Copy poem files into place
+  copy:
+    src: "{{ content_folder }}/jumpbox/home/{{ item }}/home/"
+    dest: /home/{{ item }}/
+    owner: "{{ item }}"
+    group: "{{ item }}"
+    mode: 0770
+  with_sequence: start=1 end=4 format={{ player_name_format }}
+
+- name: Copy the clue files
+  copy:
+    src: "{{ content_folder }}/jumpbox/home/{{ item }}/clues/"
+    dest: /home/{{ item }}/clues/
+    owner: "{{ item }}"
+    group: "{{ item }}"
+    mode: 0770
+  with_sequence: start=1 end=4 format={{ player_name_format }}
+
+- name: Copy the map files
+  copy:
+    src: "{{ content_folder }}/jumpbox/home/{{ item }}/map/"
+    dest: /home/{{ item }}/.map/
+    owner: "{{ item }}"
+    group: "{{ item }}"
+    mode: 0770
+  with_sequence: start=1 end=4 format={{ player_name_format }}
+
 - name: Copy the updated bashrc files
   # This colorizes the prompt to help differentiate systems when using
   # the command line
@@ -91,8 +145,13 @@
     group: "{{ item }}"
   with_sequence: count={{ player_count }} format={{ player_name_format }}
 
-- name: Update the desktop color
-  # This changes the default xfce4 desktop color to help differentiate systems
+- name: Copy background image into place
+  copy:
+    src: "{{ content_folder }}jumpbox/images/TakeBackHack.svg"
+    dest: /usr/share/backgrounds/
+
+- name: Update the desktop background
+  # This changes the default xfce4 desktop to help differentiate systems
   # when using RDP to connect to different instances
   copy:
     src: "{{ content_folder }}/jumpbox/xfce4/xfce4-desktop.xml"
@@ -101,23 +160,46 @@
     group: "{{ item }}"
   with_sequence: count={{ player_count }} format={{ player_name_format }}
 
-- name: Install 1NTERRUPT directory
+- name: Install the START_HERE directory
   file:
     path: "/home/{{ item }}/Desktop/START_HERE"
     state: directory
     owner: "{{ item }}"
     group: "{{ item }}"
-    mode: 0755
+    mode: 0750
   with_sequence: count={{ player_count }} format={{ player_name_format }}
-  become: true
 
-- name: Copy files to 1NTERRUPT directory
+- name: Copy files to the START_HERE directory
   copy:
     src: "{{ content_folder }}jumpbox/1NTERRUPT/"
     dest: "/home/{{ item }}/Desktop/START_HERE/"
     owner: "{{ item }}"
     group: "{{ item }}"
   with_sequence: count={{ player_count }} format={{ player_name_format }}
+
+- name: Create the shared workspace directory
+  file:
+    path: /home/workspace/
+    state: directory
+    owner: root
+    group: "{{ player_group }}"
+    mode: 0777
+
+- name: Place the content in workspace
+  copy:
+    src: "{{ content_folder }}jumpbox/home/workspace/"
+    dest: /home/workspace
+    owner: root
+    group: "{{ player_group }}"
+    mode: 0777
+
+- name: Create the local workspace directory
+  file:
+    src: /home/{{ item }}/Desktop/START_HERE/workspace/
+    dest: /home/workspace/collaboration.txt
+    state: link
+  with_sequence: count={{ player_count }} format={{ player_name_format }}
+  ignore_errors: true
 
 # Set up the remote desktop server
 - name: Install the RDP server
