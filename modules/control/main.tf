@@ -5,7 +5,7 @@ variable "inst_type_scoreboard" {}
 variable "inst_type_jumpbox" {}
 variable "master_key" {}
 variable "key_name" {}
-variable "ctf-domain" {}
+variable "ctf_domain" {}
 variable "company_domain" {}
 variable "c2_domain" {}
 
@@ -51,10 +51,18 @@ variable "c2" {
   default = "c2"
 }
 
+variable "image16" {
+  default = ["ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server-*"]
+}
+
+variable "image18" {
+  default = ["ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-*"]
+}
+
 data "aws_caller_identity" "current" {}
 
 data "aws_route53_zone" "events" {
-  name = "${var.ctf-domain}"
+  name = "${var.ctf_domain}"
 }
 
 data "aws_ami" "ubuntu16" {
@@ -62,7 +70,23 @@ data "aws_ami" "ubuntu16" {
 
   filter {
     name   = "name"
-    values = ["ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server-*"]
+    values = ["${var.image16}"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+
+  owners = ["099720109477"] # Canonical
+}
+
+data "aws_ami" "ubuntu18" {
+  most_recent = true
+
+  filter {
+    name   = "name"
+    values = ["${var.image18}"]
   }
 
   filter {
@@ -446,9 +470,9 @@ resource "aws_route53_record" "backstage_ext" {
   records = ["${aws_instance.backstage.public_ip}"]
 }
 
-###############################
-# Configure scoreboard instance
-###############################
+################################
+# Configure additional instances
+################################
 
 data "template_file" "update_script" {
   template = "${file("${path.module}/update.tpl")}"

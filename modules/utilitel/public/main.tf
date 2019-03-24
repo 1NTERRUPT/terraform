@@ -22,11 +22,12 @@ variable "zone_ids" {
 
 variable "inst_type_default" {}
 variable "inst_type_jumpbox" {}
-variable "ctf-domain" {}
+variable "inst_type_breakout" {}
+variable "ctf_domain" {}
 variable "company_domain" {}
 
 data "aws_route53_zone" "events" {
-  name = "${var.ctf-domain}"
+  name = "${var.ctf_domain}"
 }
 
 resource "aws_route53_zone" "utilitel" {
@@ -146,6 +147,30 @@ resource "aws_route53_record" "billpay" {
   type    = "A"
   ttl     = "10"
   records = ["${element(aws_instance.billpay.*.private_ip, count.index)}"]
+}
+
+resource "aws_instance" "breakout" {
+  ami             = "${var.ami_id_18}"
+  instance_type   = "${var.inst_type_breakout}"
+  count           = "${var.team_count}"
+  subnet_id       = "${element(var.subnet_ids,count.index)}"
+  key_name        = "${var.key_name}"
+  security_groups = ["${element(aws_security_group.all_pub.*.id, count.index)}"]
+  user_data       = "${var.init_script}"
+
+  tags {
+    Name = "breakout_server"
+    team = "${count.index}"
+  }
+}
+
+resource "aws_route53_record" "breakout" {
+  zone_id = "${element(aws_route53_zone.utilitel.*.id,count.index)}"
+  count   = "${var.team_count}"
+  name    = "${format("team%02d", count.index)}"
+  type    = "A"
+  ttl     = "10"
+  records = ["${element(aws_instance.breakout.*.private_ip, count.index)}"]
 }
 
 output "jumpbox_addresses" {

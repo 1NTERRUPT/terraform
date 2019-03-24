@@ -1,7 +1,7 @@
 variable "region" {}
 variable "team_count" {}
 variable "key_name" {}
-variable "ctf-domain" {}
+variable "ctf_domain" {}
 variable "company_domain" {}
 variable "c2_domain" {}
 
@@ -18,6 +18,7 @@ variable "inst_type_default" {}
 variable "inst_type_scoreboard" {}
 variable "inst_type_jumpbox" {}
 variable "inst_type_mail" {}
+variable "inst_type_breakout" {}
 
 variable "public" {
   default = "public"
@@ -52,7 +53,7 @@ variable "image18" {
 }
 
 data "aws_route53_zone" "events" {
-  name = "${var.ctf-domain}"
+  name = "${var.ctf_domain}"
 }
 
 resource "aws_route53_zone" "utilitel" {
@@ -141,7 +142,7 @@ data "aws_ami" "ubuntu18" {
 module "public" {
   source               = "./public"
   key_name             = "${var.key_name}"
-  ctf-domain           = "${var.ctf-domain}"
+  ctf_domain           = "${var.ctf_domain}"
   company_domain       = "${var.company_domain}"
   team_count           = "${var.team_count}"
   ami_id_16            = "${data.aws_ami.ubuntu16.id}"
@@ -153,6 +154,7 @@ module "public" {
   zone_ids             = ["${module.network.utilitel_zones}", "${module.network.c2_zones}"]
   inst_type_default    = "${var.inst_type_default}"
   inst_type_jumpbox    = "${var.inst_type_jumpbox}"
+  inst_type_breakout   = "${var.inst_type_breakout}"
 }
 
 ############################

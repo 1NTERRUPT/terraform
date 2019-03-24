@@ -3,8 +3,9 @@
  This is the terraform config for the utilitel fake utility company
 
  # First time steps
- 1. `aws s3 cp s3://1nterrupt-util/terraform.tfvars .`
-    or `cp terraform.tfvars.template terraform.tfvars`
+ 1. `aws s3 cp s3://1nterrupt-scenario-support/vars/terraform/regional.tf .`
+ 1. `aws s3 cp s3://1nterrupt-scenario-support/vars/terraform/variables.tf .`
+ 1. `aws s3 cp --recursive s3://1nterrupt-scenario-support/vars/ansible/global_vars ansible/global_vars`
  1. [Install terraform](https://www.terraform.io/intro/getting-started/install.html)
 
  # To deploy or make changes

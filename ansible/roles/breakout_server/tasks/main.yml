@@ -1,0 +1,267 @@
+---
+- name: Get global variables
+  include_vars:
+    file: ./global_vars/common.yml
+
+- name: Get regional variables
+  include_vars:
+    file: ./global_vars/regional.yml
+
+- name: Get host variables
+  include_vars:
+    file: "{{ content_folder}}/breakout_server/host_vars/vars.yml"
+
+- name: Set the hostname to {{ hostname }}
+  hostname:
+    name: "{{ hostname }}"
+  become: true
+
+- name: Install base packages
+  apt:
+    name:
+      - hxtools
+      - nmap
+      - gvfs
+      - gvfs-backends
+      - smbclient
+      - evince
+      - chromium-browser
+      - gedit
+      - gedit-plugins
+      - gedit-common
+    update_cache: true
+    state: latest
+
+# Set up user accounts and directories
+- name: Create the {{ WebAdmin_acct_name }} account
+  # This account is for the leader of the web security breakout to
+  # have admin access to the instance
+  user:
+    name: "{{ WebAdmin_acct_name }}"
+    password: "{{ WebAdmin_acct_pwd | password_hash('sha512', password_salt ) }}"
+    shell: "{{ users_shell }}"
+
+- name: Create the {{ NetAdmin_acct_name }} account
+  # This account is for the leader of the network security breakout to
+  # have admin access to the instance
+  user:
+    name: "{{ NetAdmin_acct_name }}"
+    password: "{{ NetAdmin_acct_pwd | password_hash('sha512', password_salt ) }}"
+    shell: "{{ users_shell }}"
+
+- name: Create the {{ admin_acct_name }} account
+  # This is a generic root-level account
+  user:
+    name: "{{ admin_acct_name }}"
+    password: "{{ admin_acct_pwd | password_hash('sha512', password_salt ) }}"
+    shell: "{{ users_shell }}"
+
+- name: Create the player accounts
+  # These are local accounts for all of the players
+  user:
+    name: "{{ item }}"
+    password: "{{ player_acct_pwd | password_hash('sha512', password_salt ) }}"
+    shell: "{{ users_shell }}"
+  with_sequence: count={{ player_count }} format={{ player_name_format }}
+
+- name: Copy the updated bashrc files
+  # This colorizes the prompt to help differentiate systems when using
+  # the command line
+  copy:
+    src: "{{ content_folder }}/breakout_server/bashrc"
+    dest: "/home/{{ item }}/.bashrc"
+    owner: "{{ item }}"
+    group: "{{ item }}"
+  with_sequence: count={{ player_count }} format={{ player_name_format }}
+
+- name: Update the desktop color
+  # This changes the default xfce4 desktop color to help differentiate systems
+  # when using RDP to connect to different instances
+  copy:
+    src: "{{ content_folder }}/breakout_server/xfce4/xfce4-desktop.xml"
+    dest: "/home/{{ item }}/.config/xfce4/xfconf/xfce-perchannel-xml/"
+    owner: "{{ item }}"
+    group: "{{ item }}"
+  with_sequence: count={{ player_count }} format={{ player_name_format }}
+
+- name: Create the networking directory
+  # This is the directory where the guide for this breakout session
+  # will be placed for each player
+  file:
+    path: "/home/{{ item }}/Desktop/network_breakout/"
+    state: directory
+    owner: "{{ item }}"
+    group: "{{ item }}"
+  with_sequence: count={{ player_count }} format={{ player_name_format }}
+
+- name: Copy the networking breakout guide to the networking directory
+  copy:
+    src: "{{ content_folder}}/breakout_server/files/networking/IntroToNetwork.pdf"
+    dest: "/home/{{ item }}/Desktop/network_breakout/"
+    owner: "{{ item }}"
+    group: "{{ item }}"
+  with_sequence: count={{ player_count }} format={{ player_name_format }}
+
+- name: Copy the obfuscation files to each account's home folder
+  copy:
+    src: "{{ content_folder}}/breakout_server/files/networking/obfuscation/"
+    dest: "/home/{{ item }}/Desktop/network_breakout/"
+    owner: "{{ item }}"
+    group: "{{ item }}"
+  with_sequence: count={{ player_count }} format={{ player_name_format }}
+
+# Browser tasks
+- name: Create Chromium managed policy directory
+  file:
+    path: /etc/opt/chromium/policies/managed
+    state: directory
+    mode: -w
+
+- name: Install the Chromium policy
+  # We're using policies to set the home page, restrict downloads, etc.
+  copy:
+    src: "{{ content_folder}}/breakout_server/files/browser_policies/"
+    dest: /etc/chromium/policies/managed/
+
+# Set up the remote desktop server
+- name: Install the RDP server
+  include_role:
+    name: rdp_server
+
+- name: Setup xsession for the player accounts
+  command: "echo xfce4-session >~{{ item }}/.xsession && chown {{ item }}:{{ item }} ~{{ item }}/.xsession"
+  with_sequence: count={{ player_count }} format={{ player_name_format }}
+
+- name: Update copy the wallpaper image
+  copy:
+    src: "{{ content_folder}}/breakout_server/files/images/TakeBackHack.svg"
+    dest: /usr/share/xfce4/backgrounds/
+
+# Set up the web server
+- name: Install the web server
+  include_role:
+    name: web_server
+
+- name: Remove the default home page
+  file:
+    path: /var/www/html/index.nginx-debian.html
+    state: absent
+
+- name: Copy in the new HTML pages
+  copy:
+    src: "{{ item }}"
+    dest: /var/www/html/
+  with_fileglob: "{{ content_folder }}/breakout_server/files/html/*.html"
+
+- name: Copy the stylesheet for the home page
+  copy:
+    src: "{{ content_folder }}/breakout_server/files/html/stylesheet/"
+    dest: /var/www/html/
+
+- name: Create the real web folders for all user accounts
+  file:
+    path: /var/www/html/{{ item }}
+    state: directory
+    owner: "{{ item }}"
+    group: "{{ item }}"
+  with_sequence: count={{ player_count }} format={{ player_name_format }}
+
+- name: Copy files to each account's real web folder
+  copy:
+    src: "{{ content_folder }}/breakout_server/files/html/players/"
+    dest: "/var/www/html/{{ item }}/"
+    owner: "{{ item }}"
+    group: "{{ item }}"
+  with_sequence: count={{ player_count }} format={{ player_name_format }}
+
+- name: Copy the stylesheet for the home page
+  copy:
+    src: "{{ content_folder }}/breakout_server/files/html/stylesheet/"
+    dest: "/var/www/html/{{ item }}/"
+    owner: "{{ item }}"
+    group: "{{ item }}"
+  with_sequence: count={{ player_count }} format={{ player_name_format }}
+
+- name: Create the desktop web folder
+  file:
+    path: /home/{{ item }}/Desktop/web_breakout/
+    state: directory
+    owner: "{{ item }}"
+    group: "{{ item }}"
+  with_sequence: count={{ player_count }} format={{ player_name_format }}
+
+- name: Copy the web breakout guide to the web directory
+  copy:
+    src: "{{ content_folder }}/breakout_server/files/web/IntroToWeb.pdf"
+    dest: "/home/{{ item }}/Desktop/web_breakout/"
+    owner: "{{ item }}"
+    group: "{{ item }}"
+  with_sequence: count={{ player_count }} format={{ player_name_format }}
+
+- name: Create symbolic links to the index.html files
+  file:
+    src: /var/www/html/{{ item }}/index.html
+    dest: /home/{{ item }}/Desktop/web_breakout/index.html
+    state: link
+  with_sequence: count={{ player_count }} format={{ player_name_format }}
+
+- name: Create symbolic links for the cookie.html files
+  file:
+    src: /var/www/html/{{ item }}/cookie.html
+    dest: /home/{{ item }}/Desktop/web_breakout/cookie.html
+    state: link
+  with_sequence: count={{ player_count }} format={{ player_name_format }}
+
+# Set up the file server
+- name: setup samba
+  include_role:
+    name: samba
+  vars:
+    samba_netbios_name: "{{ hostname }}"
+    samba_server_string: 'Welcome to the {{ hostname }} file server'
+    samba_workgroup: "{{ hostname }}"
+
+    samba_load_homes: true
+    samba_load_printers: false
+    samba_create_varwww_symlinks: true
+
+    samba_log: /var/log/samba.log
+    samba_log_size: 60000
+
+    samba_map_to_guest: Bad User
+
+    samba_shares_root: /srv/samba
+    samba_shares:
+      - name: public
+        comment: "public fileshare"
+        public: yes
+        guest_ok: yes
+        read_only: yes
+
+      - name: private
+        comment: "private fileshare"
+        public: yes
+        guest_ok: no
+        read_only: yes
+        valid_users: "{{ admin_acct_name }}"
+    samba_users:
+      -
+        name: "{{ admin_acct_name }}"
+        password: "{{ admin_acct_pwd }}"
+
+# Create flags for the public file share
+- name: Copy steganography content to home directory
+  copy:
+    src: "{{ content_folder }}/breakout_server/files/stego/strings.jpg"
+    dest: /home/{{ installer_acct_name }}/
+
+- name: Run the rot13 script
+  shell: echo 'This is a hidden message' >> strings.jpg
+  args:
+    chdir: /home/{{ installer_acct_name }}/
+
+- name: Copy steganography file to public share
+  copy:
+    src: /home/{{ installer_acct_name }}/strings.jpg
+    dest: /srv/samba/public/
+    remote_src: true

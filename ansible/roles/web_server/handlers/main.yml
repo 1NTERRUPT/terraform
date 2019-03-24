@@ -1,0 +1,7 @@
+# File: roles/web_server/handlers/main.yml
+---
+  
+- name: Restart nginx
+  service:
+    name: "{{ web_service }}"
+    state: restarted

@@ -1,0 +1,13 @@
+---
+
+- include_vars:
+    file: ../vars/default.yml
+    
+- name: Install Packages
+  apt:
+    name:
+      - nginx
+    update_cache: true
+    state: latest
+  notify:
+    - Restart nginx

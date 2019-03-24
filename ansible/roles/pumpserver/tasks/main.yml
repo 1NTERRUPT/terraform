@@ -2,6 +2,7 @@
 - git:
     repo: https://github.com/1NTERRUPT/water-processing
     dest: /srv/pumpserver
+    force: true
 
 - name: Get host variables
   include_vars:
@@ -24,8 +25,6 @@
   apt:
     name:
       - build-essential
-      - npm
-      - nodejs-legacy
       - mcrypt
       - nginx
       - ruby2.4
@@ -35,6 +34,22 @@
       - libsqlite3-dev
     update_cache: true
     state: latest
+
+- name: Install the gpg key for nodejs LTS
+  apt_key:
+    url: "http://deb.nodesource.com/gpgkey/nodesource.gpg.key"
+    state: present
+
+- name: Install the nodejs LTS repos
+  apt_repository:
+    repo: "deb https://deb.nodesource.com/node_10.x trusty main"
+    state: present
+    update_cache: yes
+
+- name: Install the nodejs
+  apt:
+    name: nodejs
+    state: present
 
 - name: Set Ruby 2.4 as default
   command: ruby-switch --set ruby2.4

@@ -13,6 +13,7 @@
     name:
       - xfce4
       - xrdp
+      - xfce4-goodies
       - smbclient
       - gvfs
       - gvfs-backends
@@ -20,8 +21,8 @@
       - gedit
       - chromium-browser
       - evince
-      - xfce4-goodies
       - hxtools
+      - rdesktop
     update_cache: true
     state: latest
 
@@ -80,9 +81,29 @@
     shell: "{{ users_shell }}"
   with_sequence: count={{ player_count }} format={{ player_name_format }}
 
+- name: Copy the updated bashrc files
+  # This colorizes the prompt to help differentiate systems when using
+  # the command line
+  copy:
+    src: "{{ content_folder }}/jumpbox/bashrc"
+    dest: "/home/{{ item }}/.bashrc"
+    owner: "{{ item }}"
+    group: "{{ item }}"
+  with_sequence: count={{ player_count }} format={{ player_name_format }}
+
+- name: Update the desktop color
+  # This changes the default xfce4 desktop color to help differentiate systems
+  # when using RDP to connect to different instances
+  copy:
+    src: "{{ content_folder }}/jumpbox/xfce4/xfce4-desktop.xml"
+    dest: "/home/{{ item }}/.config/xfce4/xfconf/xfce-perchannel-xml/"
+    owner: "{{ item }}"
+    group: "{{ item }}"
+  with_sequence: count={{ player_count }} format={{ player_name_format }}
+
 - name: Install 1NTERRUPT directory
   file:
-    path: "/home/{{ item }}/Desktop/1NTERRUPT"
+    path: "/home/{{ item }}/Desktop/START_HERE"
     state: directory
     owner: "{{ item }}"
     group: "{{ item }}"
@@ -93,30 +114,19 @@
 - name: Copy files to 1NTERRUPT directory
   copy:
     src: "{{ content_folder }}jumpbox/1NTERRUPT/"
-    dest: "/home/{{ item }}/Desktop/1NTERRUPT/"
+    dest: "/home/{{ item }}/Desktop/START_HERE/"
     owner: "{{ item }}"
     group: "{{ item }}"
   with_sequence: count={{ player_count }} format={{ player_name_format }}
 
-# xrdp tasks
-- name: Copy updated xfce-keyboard-shortcuts file
-  copy:
-    src: "{{ content_folder }}jumpbox/xfce4-keyboard-shortcuts.xml"
-    dest: /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/
+# Set up the remote desktop server
+- name: Install the RDP server
+  include_role:
+    name: rdp_server
 
 - name: Setup xsession for the player accounts
   command: "echo xfce4-session >~{{ item }}/.xsession && chown {{ item }}:{{ item }} ~{{ item }}/.xsession"
   with_sequence: count={{ player_count }} format={{ player_name_format }}
-
-- name: Set default panel config for all users
-  copy:
-    src: "{{ content_folder }}jumpbox/xfce4-panel.xml"
-    dest: /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/
-
-- name: Restart the xrdp service
-  service:
-    name: xrdp
-    state: restarted
 
 - name: Reboot the server
   reboot:
