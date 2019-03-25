@@ -13,6 +13,14 @@
     name: "{{ hostname }}"
   become: yes
 
+- name: Add our hostname to /etc/hosts
+  lineinfile:
+    dest: /etc/hosts
+    line: "127.0.0.1 {{ hostname }}"
+    state: present
+    insertafter: EOF
+    create: True
+
 - name: Setup server permissions
   file:
     path: /srv/pumpserver/
@@ -32,6 +40,8 @@
       - ruby-switch
       - sqlite3
       - libsqlite3-dev
+      - liblzma-dev 
+      - zlib1g-dev
     update_cache: true
     state: latest
 
