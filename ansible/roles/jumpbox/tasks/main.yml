@@ -6,7 +6,7 @@
 - name: Set the hostname
   hostname:
     name: "{{ hostname }}"
-  become: yes
+  become: true
 
 - name: Install Packages
   apt:
@@ -45,14 +45,32 @@
     password: "{{ user_acct_pwd | password_hash('sha512', password_salt ) }}"
     shell: "{{ users_shell }}"
 
+# User ssh set up
 - name: Install the user ssh directory
   file:
     path: /home/{{ user_acct_name }}/.ssh
     state: directory
     owner: "{{ user_acct_name }}"
     group: "{{ user_acct_name }}"
-    mode: 0400
+    mode: 0700
 
+- name: Copy ssh public key to {{ user_acct_name }}'s home directory
+  copy:
+    src: "{{ content_folder }}jumpbox/home/{{ user_acct_name }}/.ssh/id_rsa.pub"
+    dest: /home/{{ user_acct_name }}/.ssh/
+    owner: "{{ user_acct_name }}"
+    group: "{{ user_acct_name }}"
+    mode: 0644
+
+- name: Copy ssh private key to {{ user_acct_name }}'s home directory
+  copy:
+    src: "{{ content_folder }}jumpbox/home/{{ user_acct_name }}/.ssh/id_rsa"
+    dest: /home/{{ user_acct_name }}/.ssh/
+    owner: "{{ user_acct_name }}"
+    group: "{{ user_acct_name }}"
+    mode: 0600
+
+# Create and populate desktop content
 - name: Copy content to {{ user_acct_name }}'s home directory
   copy:
     src: "{{ content_folder }}jumpbox/home/{{ user_acct_name }}/"
@@ -60,13 +78,6 @@
     owner: "{{ user_acct_name }}"
     group: "{{ user_acct_name }}"
     mode: 0755
-
-- name: Copy ssh content to {{ user_acct_name }}'s home directory
-  copy:
-    src: "{{ content_folder }}jumpbox/home/{{ user_acct_name }}/.ssh/"
-    dest: /home/{{ user_acct_name }}/.ssh/
-    owner: "{{ user_acct_name }}"
-    group: "{{ user_acct_name }}"
 
 - name: Copy content to {{ user_acct_name }}'s Desktop
   copy:
@@ -91,8 +102,13 @@
     group: "{{ item }}"
   with_sequence: count={{ player_count }} format={{ player_name_format }}
 
-- name: Update the desktop color
-  # This changes the default xfce4 desktop color to help differentiate systems
+- name: Copy background image into place
+  copy:
+    src: "{{ content_folder }}/jumpbox/images/TackBackHack.svg"
+    dest: /user/share/backgrounds/
+
+- name: Update the desktop background
+  # This changes the default xfce4 desktop to help differentiate systems
   # when using RDP to connect to different instances
   copy:
     src: "{{ content_folder }}/jumpbox/xfce4/xfce4-desktop.xml"
@@ -101,7 +117,7 @@
     group: "{{ item }}"
   with_sequence: count={{ player_count }} format={{ player_name_format }}
 
-- name: Install 1NTERRUPT directory
+- name: Install the START_HERE directory
   file:
     path: "/home/{{ item }}/Desktop/START_HERE"
     state: directory
@@ -109,9 +125,8 @@
     group: "{{ item }}"
     mode: 0755
   with_sequence: count={{ player_count }} format={{ player_name_format }}
-  become: true
 
-- name: Copy files to 1NTERRUPT directory
+- name: Copy files to the START_HERE directory
   copy:
     src: "{{ content_folder }}jumpbox/1NTERRUPT/"
     dest: "/home/{{ item }}/Desktop/START_HERE/"
