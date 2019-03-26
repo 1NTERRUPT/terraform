@@ -104,7 +104,7 @@
 
 - name: Copy background image into place
   copy:
-    src: "{{ content_folder }}/jumpbox/images/TackBackHack.svg"
+    src: "{{ content_folder }}jumpbox/images/TakeBackHack.svg"
     dest: /user/share/backgrounds/
 
 - name: Update the desktop background
