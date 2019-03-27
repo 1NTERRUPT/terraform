@@ -6,8 +6,14 @@
 - name: Set the hostname
   hostname:
     name: "{{ hostname }}"
-  become: yes
 
+- name: Put the ssh banner in place
+  copy:
+    src: "{{ content_folder }}/opsfile01/files/10-help-text"
+    dest: /etc/update-motd.d/
+    mode: +x
+
+# Set up the user account
 - name: Create {{ user_acct_name }} user account
   user:
     name: "{{ user_acct_name }}"
@@ -35,7 +41,7 @@
     state: touch
     mode: 0644
 
-# Setup Ops account
+# Set up the Ops account
 - name: Create {{ ops_acct_name }} user account
   user:
     name: "{{ ops_acct_name }}"
