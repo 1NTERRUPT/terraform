@@ -108,6 +108,15 @@
     shell: "{{ users_shell }}"
   with_sequence: count={{ player_count }} format={{ player_name_format }}
 
+- name: Copy the clue files
+  copy:
+    src: "{{ content_folder }}/jumpbox/home/players/clues/{{ item }}/"
+    dest: /home/{{ item }}/clues/
+    owner: "{{ item }}"
+    group: "{{ item }}"
+    mode: 0770
+  with_sequence: start=1 end=4 format={{ player_name_format }}
+
 - name: Copy the updated bashrc files
   # This colorizes the prompt to help differentiate systems when using
   # the command line
