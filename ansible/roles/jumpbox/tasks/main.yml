@@ -70,6 +70,22 @@
     group: "{{ user_acct_name }}"
     mode: 0600
 
+- name: Create the local access folder for {{ user_acct_name }}
+  file:
+    path: /home/{{ user_acct_name }}/remote_desktop
+    state: directory
+    owner: "{{ user_acct_name }}"
+    group: "{{ user_acct_name }}"
+    mode: 0774
+
+- name: Add file to the local access directory
+  copy:
+    src: "{{ content_folder }}jumpbox/home/{{ user_acct_name }}/remote_desktop/"
+    dest: /home/{{ user_acct_name }}/remote_desktop
+    owner: "{{ user_acct_name }}"
+    group: "{{ user_acct_name }}"
+    mode: 0770
+
 # Create and populate desktop content
 - name: Copy content to {{ user_acct_name }}'s home directory
   copy:
@@ -123,7 +139,7 @@
     state: directory
     owner: "{{ item }}"
     group: "{{ item }}"
-    mode: 0755
+    mode: 0750
   with_sequence: count={{ player_count }} format={{ player_name_format }}
 
 - name: Copy files to the START_HERE directory
