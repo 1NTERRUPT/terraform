@@ -108,10 +108,28 @@
     shell: "{{ users_shell }}"
   with_sequence: count={{ player_count }} format={{ player_name_format }}
 
+- name: Copy poem files into place
+  copy:
+    src: "{{ content_folder }}/jumpbox/home/{{ item }}/home/"
+    dest: /home/{{ item }}/
+    owner: "{{ item }}"
+    group: "{{ item }}"
+    mode: 0770
+  with_sequence: start=1 end=4 format={{ player_name_format }}
+
 - name: Copy the clue files
   copy:
-    src: "{{ content_folder }}/jumpbox/home/players/clues/{{ item }}/"
+    src: "{{ content_folder }}/jumpbox/home/{{ item }}/clues/"
     dest: /home/{{ item }}/clues/
+    owner: "{{ item }}"
+    group: "{{ item }}"
+    mode: 0770
+  with_sequence: start=1 end=4 format={{ player_name_format }}
+
+- name: Copy the map files
+  copy:
+    src: "{{ content_folder }}/jumpbox/home/{{ item }}/map/"
+    dest: /home/{{ item }}/.map/
     owner: "{{ item }}"
     group: "{{ item }}"
     mode: 0770
@@ -158,6 +176,30 @@
     owner: "{{ item }}"
     group: "{{ item }}"
   with_sequence: count={{ player_count }} format={{ player_name_format }}
+
+- name: Create the shared workspace directory
+  file:
+    path: /home/workspace/
+    state: directory
+    owner: root
+    group: "{{ player_group }}"
+    mode: 0777
+
+- name: Place the content in workspace
+  copy:
+    src: "{{ content_folder }}jumpbox/home/workspace/"
+    dest: /home/workspace
+    owner: root
+    group: "{{ player_group }}"
+    mode: 0777
+
+- name: Create the local workspace directory
+  file:
+    src: /home/{{ item }}/Desktop/START_HERE/workspace/
+    dest: /home/workspace/collaboration.txt
+    state: link
+  with_sequence: count={{ player_count }} format={{ player_name_format }}
+  ignore_errors: true
 
 # Set up the remote desktop server
 - name: Install the RDP server
